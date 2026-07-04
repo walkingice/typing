@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            text-align: center;
+            max-width: 90vw;
+            width: 100%;
+        }
+        .scene {
+            display: none;
+            padding: 20px;
+            background-color: #34495e;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .scene.active {
+            display: block;
+        }
+        h1, h2 {
+            margin-top: 0;
+            color: #ecf0f1;
+        }
+        input {
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            width: 200px;
+            max-length: 10;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #3498db;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button.secondary {
+            background-color: #95a5a6;
+        }
+        button.secondary:hover {
+            background-color: #7f8c8d;
+        }
+        #playerName {
+            max-width: 200px;
+        }
+        .input-group {
+            margin: 20px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #bdc3c7;
+        }
+        #gameInfo {
+            margin-bottom: 20px;
+        }
+        #gameStatus {
+            font-size: 14px;
+            color: #bdc3c7;
+            margin-top: 5px;
+        }
+        #gameCanvas {
+            border: 2px solid #3498db;
+            border-radius: 5px;
+            background-color: #ffffff;
+            margin: 20px auto;
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+        .game-controls {
+            margin-top: 20px;
+        }
+        .rank-controls {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        #clearRankBtn {
+            display: none;
+        }
+        #leaderboardList {
+            text-align: left;
+            max-width: 300px;
+            margin: 20px auto;
+            background-color: #2c3e50;
+            border-radius: 5px;
+            padding: 15px;
+        }
+        .rank-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #34495e;
+        }
+        .rank-entry:last-child {
+            border-bottom: none;
+        }
+        .rank-position {
+            color: #f39c12;
+            font-weight: bold;
+            min-width: 30px;
+        }
+        .rank-name {
+            flex: 1;
+            margin-left: 10px;
+            color: #ecf0f1;
+        }
+        .rank-score {
+            color: #3498db;
+            font-weight: bold;
+        }
+        .rank-entry.highlight {
+            background-color: #34495e;
+            border-radius: 3px;
+            margin: 2px 0;
+            padding: 10px;
+        }
+        /* Responsive design  */
+        @media (max-width: 100vw) {
+            #gameCanvas {
+                max-width: calc(100vw - 60px);
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="scene-intro" class="scene active">
+            <h1>Intro scene</h1>
+            <div class="input-group">
+                <label for="playerName">玩家姓名 (最多10個字):</label>
+                <input type="text" id="playerName" placeholder="請輸入您的姓名" maxlength="10">
+            </div>
+            <button id="startGameBtn">開始遊戲</button>
+            <button id="showRankBtn" class="secondary">排行榜</button>
+        </div>
+        <div id="scene-config" class="scene">
+            <h1>Config scene</h1>
+            <button id="startGameBtn">上傳新列表</button>
+        </div>
+
+        <div id="scene-game" class="scene">
+            <div id="gameInfo">
+                <h2>Game scene</h2>
+                <div id="gameStatus">準備開始遊戲...</div>
+            </div>
+            <canvas id="gameCanvas"></canvas>
+            <div class="game-controls">
+                <button id="restartGameBtn">重新開始</button>
+                <button id="backFromGameBtn" class="secondary">返回</button>
+            </div>
+        </div>
+        <div id="scene-rank" class="scene">
+            <h2>🏆 排行榜 🏆</h2>
+            <div id="leaderboardList">
+                <p>暫無記錄</p>
+            </div>
+            <div class="rank-controls">
+                <button id="clearRankBtn" class="secondary">清空排行榜</button>
+                <button id="backFromRankBtn" class="secondary">返回</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    </script>
+</body>
+</html>
