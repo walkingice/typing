@@ -17,7 +17,7 @@ Development plan. The agent **MUST** follow this plan and propose how to achieve
 
 ## Phase 1
 
-* [ ] Establish the basic scene flow.
+* [x] Establish the basic scene flow.
 * No real scene implementation is required yet. The UI can be extremely minimal.
 * Each scene only needs a basic UI with simple placeholder text.
 * Ensure transitions between scenes work correctly.
