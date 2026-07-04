@@ -27,6 +27,7 @@
             background-color: #34495e;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
         }
         .scene.active {
             display: block;
@@ -35,14 +36,28 @@
             margin-top: 0;
             color: #ecf0f1;
         }
-        input {
+        input, select {
             padding: 10px;
             margin: 10px 0;
             border: none;
             border-radius: 5px;
             font-size: 16px;
             width: 200px;
-            max-length: 10;
+        }
+        .gear-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            color: #ecf0f1;
+            transition: transform 0.3s;
+        }
+        .gear-btn:hover {
+            transform: rotate(90deg);
         }
         button {
             padding: 10px 20px;
@@ -155,14 +170,27 @@
 <body>
     <div class="container">
         <div id="scene-intro" class="scene active">
+            <button id="showConfigBtn" class="gear-btn" title="設定">⚙️</button>
             <h1>Intro scene</h1>
             <div class="input-group">
                 <label for="playerName">玩家姓名 (最多10個字):</label>
                 <input type="text" id="playerName" placeholder="請輸入您的姓名" maxlength="10">
             </div>
-            <button id="startGameBtn">開始遊戲</button>
+            <div class="input-group">
+                <label for="difficultySelect">遊戲難度:</label>
+                <select id="difficultySelect">
+                    <option value="easy">簡單 (Easy)</option>
+                    <option value="normal" selected>一般 (Normal)</option>
+                    <option value="hard">困難 (Hard)</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label for="wordListSelect">單字列表:</label>
+                <select id="wordListSelect">
+                </select>
+            </div>
+            <button id="startGameBtn" disabled>開始遊戲</button>
             <button id="showRankBtn" class="secondary">排行榜</button>
-            <button id="showConfigBtn" class="secondary">設定</button>
         </div>
         <div id="scene-config" class="scene">
             <h1>Config scene</h1>
