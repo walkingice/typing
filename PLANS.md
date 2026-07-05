@@ -37,7 +37,7 @@ Development plan. The agent **MUST** follow this plan and propose how to achieve
 
 ## Phase 3
 
-* [ ] Implement the Config Scene.
+* [x] Implement the Config Scene.
 * Allow the user to clear the ranking.
 * Allow the user to upload new word lists.
 * Allow the user to delete existing word lists.

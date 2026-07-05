@@ -6,7 +6,11 @@ const {
     saveScore, 
     switchScene, 
     triggerGameOver, 
-    handleNameInput 
+    handleNameInput,
+    clearRanking,
+    parseWordList,
+    addWordList,
+    deleteWordList
 } = require('./main.js');
 
 describe('Basic Infrastructure', () => {
@@ -140,6 +144,57 @@ describe('Validation and Game End mock', () => {
         assertEqual(rankData.length, 1);
         assertEqual(rankData[0].name, 'TestPlayer');
         assertEqual(rankData[0].score, state.score);
+    });
+});
+
+describe('Config and Word List Upload/Management', () => {
+    it('should clear ranking successfully', () => {
+        localStorage.clear();
+        saveScore('Test', 100);
+        assertEqual(JSON.parse(localStorage.getItem('ranking')).length, 1);
+        
+        clearRanking();
+        assertEqual(localStorage.getItem('ranking'), null);
+    });
+
+    it('should parse valid word list files', () => {
+        const fileContent = "Colors\nred\nblue\ngreen\n";
+        const parsed = parseWordList(fileContent);
+        assertEqual(parsed.name, "Colors");
+        assertEqual(parsed.words.length, 3);
+        assertEqual(parsed.words[0], "red");
+        assertEqual(parsed.words[2], "green");
+    });
+
+    it('should throw error on invalid/empty file format', () => {
+        const { assertThrows } = require('./test_lib.js');
+        assertThrows(() => parseWordList(""));
+        assertThrows(() => parseWordList("NameOnly"));
+    });
+
+    it('should add new word lists to localStorage', () => {
+        localStorage.clear();
+        addWordList("Custom1", ["one", "two"]);
+        
+        const lists = getWordLists();
+        assertEqual(lists.length, 2); // default + Custom1
+        assertEqual(lists[1].name, "Custom1");
+        assertEqual(lists[1].words[1], "two");
+    });
+
+    it('should delete existing word lists', () => {
+        localStorage.clear();
+        addWordList("List A", ["a"]);
+        addWordList("List B", ["b"]);
+        
+        let customLists = JSON.parse(localStorage.getItem('words_list'));
+        assertEqual(customLists.length, 2);
+        
+        deleteWordList(0); // Deletes List A
+        
+        customLists = JSON.parse(localStorage.getItem('words_list'));
+        assertEqual(customLists.length, 1);
+        assertEqual(customLists[0].name, "List B");
     });
 });
 
