@@ -139,6 +139,11 @@ function init() {
     });
 
     // Game Buttons
+    document.getElementById('restartGameBtn')?.addEventListener('click', () => {
+        switchScene('game');
+        triggerGameOver();
+    });
+
     document.getElementById('backFromGameBtn')?.addEventListener('click', () => {
         switchScene('intro');
     });

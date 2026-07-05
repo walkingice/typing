@@ -25,7 +25,7 @@ Development plan. The agent **MUST** follow this plan and propose how to achieve
 
 ## Phase 2
 
-* [ ] Implement the Intro Scene.
+* [x] Implement the Intro Scene.
 * Allow the user to enter a name.
 * Allow the user to choose a difficulty level and a word list before starting the game.
   * Always provide a hardcoded word list containing the letters `a`–`z`.
