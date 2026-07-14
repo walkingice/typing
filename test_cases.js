@@ -1,7 +1,10 @@
-const { describe, it, assertEqual, assert, getSummary } = require('./test_lib.js');
+const { describe, it, assertEqual, assert, getSummary, runPendingTests } = require('./test_lib.js');
 const { 
     DEFAULT_WORD_LIST, 
+    PREDEFINED_WORD_LIST_FILES,
     state, 
+    setPredefinedWordLists,
+    loadPredefinedWordLists,
     getWordLists, 
     saveScore, 
     switchScene, 
@@ -54,6 +57,7 @@ describe('Scene Flow transitions', () => {
 
 describe('Word Lists', () => {
     it('should have a default word list a-z', () => {
+        setPredefinedWordLists([]);
         assertEqual(DEFAULT_WORD_LIST.name, 'Default (a-z)');
         assertEqual(DEFAULT_WORD_LIST.words.length, 26);
         assertEqual(DEFAULT_WORD_LIST.words[0], 'a');
@@ -62,21 +66,68 @@ describe('Word Lists', () => {
 
     it('should load default list initially', () => {
         localStorage.clear();
+        setPredefinedWordLists([]);
         const lists = getWordLists();
         assertEqual(lists.length, 1);
         assertEqual(lists[0].name, 'Default (a-z)');
     });
 
-    it('should load custom lists from localStorage', () => {
+    it('should put custom lists from localStorage before defaults', () => {
         localStorage.clear();
+        setPredefinedWordLists([]);
         const customList = { name: 'My List', words: ['hello', 'world'] };
         localStorage.setItem('words_list', JSON.stringify([customList]));
 
         const lists = getWordLists();
         assertEqual(lists.length, 2);
-        assertEqual(lists[0].name, 'Default (a-z)');
-        assertEqual(lists[1].name, 'My List');
-        assertEqual(lists[1].words[0], 'hello');
+        assertEqual(lists[0].name, 'My List');
+        assertEqual(lists[0].words[0], 'hello');
+        assertEqual(lists[1].name, 'Default (a-z)');
+    });
+
+    it('should include predefined word lists before the default list', () => {
+        localStorage.clear();
+        setPredefinedWordLists([{ name: 'Built In', words: ['red', 'blue'] }]);
+
+        const lists = getWordLists();
+        assertEqual(PREDEFINED_WORD_LIST_FILES[0], 'list01.txt');
+        assertEqual(lists.length, 2);
+        assertEqual(lists[0].name, 'Built In');
+        assertEqual(lists[1].name, 'Default (a-z)');
+        setPredefinedWordLists([]);
+    });
+
+    it('should keep uploaded lists at the beginning of selection', () => {
+        localStorage.clear();
+        setPredefinedWordLists([{ name: 'Built In', words: ['red'] }]);
+        localStorage.setItem('words_list', JSON.stringify([
+            { name: 'Uploaded', words: ['one'] }
+        ]));
+
+        const lists = getWordLists();
+        assertEqual(lists[0].name, 'Uploaded');
+        assertEqual(lists[1].name, 'Built In');
+        assertEqual(lists[2].name, 'Default (a-z)');
+        setPredefinedWordLists([]);
+    });
+
+    it('should load existing predefined files through the configured filenames', async () => {
+        localStorage.clear();
+        setPredefinedWordLists([]);
+        const files = {
+            'list01.txt': 'Colors\nred\nblue\n',
+            'list02.txt': null
+        };
+
+        const loaded = await loadPredefinedWordLists(file => files[file]);
+        localStorage.clear();
+        const lists = getWordLists();
+
+        assertEqual(loaded.length, 1);
+        assertEqual(lists[0].name, 'Colors');
+        assertEqual(lists[0].words[1], 'blue');
+        assertEqual(lists[1].name, 'Default (a-z)');
+        setPredefinedWordLists([]);
     });
 });
 
@@ -184,12 +235,13 @@ describe('Config and Word List Upload/Management', () => {
 
     it('should add new word lists to localStorage', () => {
         localStorage.clear();
+        setPredefinedWordLists([]);
         addWordList("Custom1", ["one", "two"]);
         
         const lists = getWordLists();
         assertEqual(lists.length, 2); // default + Custom1
-        assertEqual(lists[1].name, "Custom1");
-        assertEqual(lists[1].words[1], "two");
+        assertEqual(lists[0].name, "Custom1");
+        assertEqual(lists[0].words[1], "two");
     });
 
     it('should delete existing word lists', () => {
@@ -298,10 +350,12 @@ describe('Phase 5 Game Mechanics', () => {
 });
 
 // Final report and exit code
-const summary = getSummary();
-console.log(`\nTest results: ${summary.passes} passed, ${summary.failures} failed.`);
-if (summary.failures > 0) {
-    process.exit(1);
-} else {
-    process.exit(0);
-}
+runPendingTests().then(() => {
+    const summary = getSummary();
+    console.log(`\nTest results: ${summary.passes} passed, ${summary.failures} failed.`);
+    if (summary.failures > 0) {
+        process.exit(1);
+    } else {
+        process.exit(0);
+    }
+});

@@ -12,6 +12,7 @@ if (typeof localStorage === 'undefined') {
 let currentSuite = '';
 let passes = 0;
 let failures = 0;
+const pendingTests = [];
 
 function describe(suiteName, fn) {
     currentSuite = suiteName;
@@ -21,17 +22,34 @@ function describe(suiteName, fn) {
 
 function it(testName, fn) {
     try {
-        fn();
-        console.log(`  ✓ ${testName}`);
-        passes++;
-    } catch (error) {
-        console.error(`  ✗ ${testName}`);
-        console.error(`    Error: ${error.message}`);
-        if (error.stack) {
-            console.error(error.stack.split('\n').slice(1, 4).join('\n'));
+        const result = fn();
+        if (result && typeof result.then === 'function') {
+            pendingTests.push(result.then(() => {
+                console.log(`  ✓ ${testName}`);
+                passes++;
+            }).catch(error => {
+                reportFailure(testName, error);
+            }));
+            return;
         }
-        failures++;
+        reportPass(testName);
+    } catch (error) {
+        reportFailure(testName, error);
     }
+}
+
+function reportPass(testName) {
+    console.log(`  ✓ ${testName}`);
+    passes++;
+}
+
+function reportFailure(testName, error) {
+    console.error(`  ✗ ${testName}`);
+    console.error(`    Error: ${error.message}`);
+    if (error.stack) {
+        console.error(error.stack.split('\n').slice(1, 4).join('\n'));
+    }
+    failures++;
 }
 
 function assert(condition, message = 'Assertion failed') {
@@ -62,6 +80,10 @@ function getSummary() {
     return { passes, failures };
 }
 
+async function runPendingTests() {
+    await Promise.all(pendingTests);
+}
+
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         describe,
@@ -69,6 +91,7 @@ if (typeof module !== 'undefined' && module.exports) {
         assert,
         assertEqual,
         assertThrows,
-        getSummary
+        getSummary,
+        runPendingTests
     };
 }

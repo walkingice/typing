@@ -5,6 +5,10 @@ const DEFAULT_WORD_LIST = {
     words: Array.from({ length: 26 }, (_, i) => String.fromCharCode(97 + i))
 };
 
+const PREDEFINED_WORD_LIST_FILES = ['list01.txt', 'list02.txt'];
+
+let predefinedWordLists = [];
+
 const state = {
     currentScene: 'intro',
     playerName: '',
@@ -18,20 +22,58 @@ const state = {
     isGameOver: false
 };
 
-function getWordLists() {
-    const list = [DEFAULT_WORD_LIST];
+function getStoredWordLists() {
     try {
         const stored = localStorage.getItem('words_list');
         if (stored) {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed)) {
-                list.push(...parsed);
+                return parsed;
             }
         }
     } catch (e) {
         console.error('Failed to parse words_list from localStorage', e);
     }
-    return list;
+    return [];
+}
+
+function getWordLists() {
+    return [
+        ...getStoredWordLists(),
+        ...predefinedWordLists,
+        DEFAULT_WORD_LIST
+    ];
+}
+
+function setPredefinedWordLists(lists) {
+    predefinedWordLists = Array.isArray(lists) ? lists : [];
+}
+
+async function loadTextFile(path) {
+    if (typeof fetch === 'undefined') return null;
+    try {
+        const response = await fetch(path, { cache: 'no-store' });
+        if (!response.ok) return null;
+        return await response.text();
+    } catch (e) {
+        return null;
+    }
+}
+
+async function loadPredefinedWordLists(loader = loadTextFile) {
+    const loaded = [];
+    for (const file of PREDEFINED_WORD_LIST_FILES) {
+        const text = await loader(file);
+        if (text) {
+            try {
+                loaded.push(parseWordList(text));
+            } catch (e) {
+                console.error(`Failed to parse predefined word list ${file}`, e);
+            }
+        }
+    }
+    setPredefinedWordLists(loaded);
+    return loaded;
 }
 
 function populateWordLists() {
@@ -430,11 +472,14 @@ function matchTyping(inputVal) {
     return true;
 }
 
-function init() {
-    if (typeof document === 'undefined') return;
-
+function loadAndRefreshWordLists() {
     populateWordLists();
+    loadPredefinedWordLists().then(() => {
+        populateWordLists();
+    });
+}
 
+function bindIntroControls() {
     const nameInput = document.getElementById('playerName');
     const startBtn = document.getElementById('startGameBtn');
     if (nameInput && startBtn) {
@@ -463,34 +508,38 @@ function init() {
     document.getElementById('showConfigBtn')?.addEventListener('click', () => {
         switchScene('config');
     });
+}
 
+function showUploadError(err) {
+    if (typeof alert !== 'undefined') {
+        alert('上傳失敗：' + err.message);
+    } else {
+        console.error('Upload failed:', err.message);
+    }
+}
+
+function handleUploadedWordListFile(fileInput, file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        try {
+            const { name, words } = parseWordList(event.target.result);
+            addWordList(name, words);
+            fileInput.value = '';
+        } catch (err) {
+            showUploadError(err);
+        }
+    };
+    reader.readAsText(file);
+}
+
+function bindConfigControls() {
     const uploadWordsBtn = document.getElementById('uploadWordsBtn');
     const wordListFileInput = document.getElementById('wordListFileInput');
-    if (uploadWordsBtn && wordListFileInput) {
-        uploadWordsBtn.addEventListener('click', () => {
-            wordListFileInput.click();
-        });
-        wordListFileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const { name, words } = parseWordList(event.target.result);
-                    addWordList(name, words);
-                    wordListFileInput.value = '';
-                } catch (err) {
-                    if (typeof alert !== 'undefined') {
-                        alert('上傳失敗：' + err.message);
-                    } else {
-                        console.error('Upload failed:', err.message);
-                    }
-                }
-            };
-            reader.readAsText(file);
-        });
-    }
-
+    uploadWordsBtn?.addEventListener('click', () => wordListFileInput?.click());
+    wordListFileInput?.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) handleUploadedWordListFile(wordListFileInput, file);
+    });
     document.getElementById('clearRankConfigBtn')?.addEventListener('click', () => {
         if (typeof confirm === 'undefined' || confirm('確定要清空排行榜嗎？')) {
             clearRanking();
@@ -500,23 +549,15 @@ function init() {
     document.getElementById('backFromConfigBtn')?.addEventListener('click', () => {
         switchScene('intro');
     });
+}
 
+function bindGameControls() {
     document.getElementById('restartGameBtn')?.addEventListener('click', () => {
         switchScene('game');
         startGame();
     });
 
     document.getElementById('backFromGameBtn')?.addEventListener('click', () => {
-        switchScene('intro');
-    });
-
-    document.getElementById('clearRankBtn')?.addEventListener('click', () => {
-        if (typeof confirm === 'undefined' || confirm('確定要清空排行榜嗎？')) {
-            clearRanking();
-        }
-    });
-
-    document.getElementById('backFromRankBtn')?.addEventListener('click', () => {
         switchScene('intro');
     });
 
@@ -537,6 +578,28 @@ function init() {
     });
 }
 
+function bindRankControls() {
+    document.getElementById('clearRankBtn')?.addEventListener('click', () => {
+        if (typeof confirm === 'undefined' || confirm('確定要清空排行榜嗎？')) {
+            clearRanking();
+        }
+    });
+
+    document.getElementById('backFromRankBtn')?.addEventListener('click', () => {
+        switchScene('intro');
+    });
+}
+
+function init() {
+    if (typeof document === 'undefined') return;
+
+    loadAndRefreshWordLists();
+    bindIntroControls();
+    bindConfigControls();
+    bindGameControls();
+    bindRankControls();
+}
+
 if (typeof window !== 'undefined') {
     window.addEventListener('DOMContentLoaded', init);
 }
@@ -544,7 +607,10 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         DEFAULT_WORD_LIST,
+        PREDEFINED_WORD_LIST_FILES,
         state,
+        setPredefinedWordLists,
+        loadPredefinedWordLists,
         getWordLists,
         saveScore,
         switchScene,
