@@ -310,6 +310,42 @@ describe('Phase 5 Game Mechanics', () => {
         assertEqual(state.score, 15);
     });
 
+    it('should match when input contains a falling block word', () => {
+        state.board = initBoard();
+        state.difficulty = 'easy';
+        state.score = 0;
+        state.isGameOver = false;
+        state.fallingBlocks = [
+            { word: 'cat', x: 2, y: 4, width: 3 }
+        ];
+
+        const matched = matchTyping('my cat typed');
+
+        assert(matched);
+        assertEqual(state.fallingBlocks.length, 0);
+        assertEqual(state.score, 3);
+    });
+
+    it('should check falling blocks from lowest to highest and clear the first contained match', () => {
+        state.board = initBoard();
+        state.difficulty = 'normal';
+        state.score = 0;
+        state.isGameOver = false;
+        state.fallingBlocks = [
+            { word: 'top', x: 2, y: 2, width: 3 },
+            { word: 'lowest-miss', x: 2, y: 12, width: 4 },
+            { word: 'middle', x: 2, y: 8, width: 4 }
+        ];
+
+        const matched = matchTyping('prefix middle and top suffix');
+
+        assert(matched);
+        assertEqual(state.fallingBlocks.length, 2);
+        assertEqual(state.fallingBlocks[0].word, 'top');
+        assertEqual(state.fallingBlocks[1].word, 'lowest-miss');
+        assertEqual(state.score, 20);
+    });
+
     it('should move falling blocks down and land them at bottom or on other blocks', () => {
         state.board = initBoard();
         state.fallingBlocks = [

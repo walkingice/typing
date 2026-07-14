@@ -455,12 +455,15 @@ function drawGame() {
     });
 }
 
+function findMatchingFallingBlock(inputVal) {
+    const blocksFromLowest = [...state.fallingBlocks].sort((a, b) => b.y - a.y);
+    return blocksFromLowest.find(block => inputVal.includes(block.word)) || null;
+}
+
 function matchTyping(inputVal) {
     if (state.isGameOver) return false;
-    const matchingBlocks = state.fallingBlocks.filter(b => b.word === inputVal);
-    if (matchingBlocks.length === 0) return false;
-    matchingBlocks.sort((a, b) => b.y - a.y);
-    const target = matchingBlocks[0];
+    const target = findMatchingFallingBlock(inputVal);
+    if (!target) return false;
     state.fallingBlocks = state.fallingBlocks.filter(b => b !== target);
     const diffConfig = getDifficultyConfig(state.difficulty);
     state.score += diffConfig.multiplier * target.width;
