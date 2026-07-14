@@ -15,23 +15,90 @@ const state = {
     fallingBlocks: [],
     gameIntervalId: null,
     tickCount: 0,
-    isGameOver: false
+    isGameOver: false,
+    predefinedWordLists: []
 };
 
 function getWordLists() {
-    const list = [DEFAULT_WORD_LIST];
+    const userLists = [];
     try {
         const stored = localStorage.getItem('words_list');
         if (stored) {
             const parsed = JSON.parse(stored);
             if (Array.isArray(parsed)) {
-                list.push(...parsed);
+                userLists.push(...parsed);
             }
         }
     } catch (e) {
         console.error('Failed to parse words_list from localStorage', e);
     }
-    return list;
+    
+    return [...userLists, DEFAULT_WORD_LIST, ...(state.predefinedWordLists || [])];
+}
+
+async function loadPredefinedWordLists() {
+    const lists = [];
+    
+    // 1. Safe Node.js environment check
+    if (typeof process !== 'undefined' && process && typeof require === 'function') {
+        try {
+            const fs = require('fs');
+            const path = require('path');
+            if (fs && path && typeof process.cwd === 'function') {
+                for (let i = 1; i <= 5; i++) {
+                    const filename = `list${String(i).padStart(2, '0')}.txt`;
+                    const filePath = path.join(process.cwd(), filename);
+                    if (fs.existsSync && fs.existsSync(filePath)) {
+                        const content = fs.readFileSync(filePath, 'utf-8');
+                        try {
+                            const parsed = parseWordList(content);
+                            if (parsed) lists.push(parsed);
+                        } catch (e) {
+                            console.error(`Failed to parse ${filename}:`, e);
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // Ignore Node.js loading errors safely
+        }
+    }
+    
+    // 2. Safe Browser fetch check
+    try {
+        const isBrowser = typeof window !== 'undefined' && typeof window.fetch === 'function';
+        const isFileProtocol = isBrowser && window.location && window.location.protocol === 'file:';
+        if (isBrowser && !isFileProtocol) {
+            const promises = [];
+            for (let i = 1; i <= 5; i++) {
+                const filename = `list${String(i).padStart(2, '0')}.txt`;
+                promises.push(
+                    fetch(filename)
+                        .then(response => response.ok ? response.text() : null)
+                        .then(text => {
+                            if (text) {
+                                try {
+                                    return parseWordList(text);
+                                } catch (e) {
+                                    console.error(`Failed to parse ${filename}:`, e);
+                                }
+                            }
+                            return null;
+                        })
+                        .catch(() => null)
+                );
+            }
+            const results = await Promise.all(promises);
+            results.forEach(res => {
+                if (res) lists.push(res);
+            });
+        }
+    } catch (e) {
+        // Ignore browser fetching errors safely
+    }
+
+    state.predefinedWordLists = lists;
+    populateWordLists();
 }
 
 function populateWordLists() {
@@ -49,7 +116,7 @@ function populateWordLists() {
     });
 }
 
-function saveScore(name, score) {
+function saveScore(name, score, wordListName) {
     let ranking = [];
     try {
         const stored = localStorage.getItem('ranking');
@@ -60,7 +127,7 @@ function saveScore(name, score) {
     } catch (e) {
         // Ignore JSON parse errors
     }
-    ranking.push({ name, score });
+    ranking.push({ name, score, wordListName: wordListName || 'Default (a-z)' });
     ranking.sort((a, b) => b.score - a.score);
     ranking = ranking.slice(0, 10);
     localStorage.setItem('ranking', JSON.stringify(ranking));
@@ -95,7 +162,7 @@ function updateRankingUI() {
         div.className = 'rank-entry';
         div.innerHTML = `
             <span class="rank-position">#${idx + 1}</span>
-            <span class="rank-name">${escapeHtml(entry.name)}</span>
+            <span class="rank-name">${escapeHtml(entry.name)} (${escapeHtml(entry.wordListName || 'Default (a-z)')})</span>
             <span class="rank-score">${entry.score}</span>
         `;
         leaderboardList.appendChild(div);
@@ -240,7 +307,8 @@ function switchScene(sceneName) {
 function triggerGameOver() {
     const randomScore = Math.floor(Math.random() * 151);
     state.score = randomScore;
-    saveScore(state.playerName, randomScore);
+    const wordListName = state.wordList ? state.wordList.name : DEFAULT_WORD_LIST.name;
+    saveScore(state.playerName, randomScore, wordListName);
     
     if (typeof document !== 'undefined') {
         const gameStatus = document.getElementById('gameStatus');
@@ -368,7 +436,8 @@ function endGame() {
         state.gameIntervalId = null;
     }
     state.isGameOver = true;
-    saveScore(state.playerName, state.score);
+    const wordListName = state.wordList ? state.wordList.name : DEFAULT_WORD_LIST.name;
+    saveScore(state.playerName, state.score, wordListName);
     if (typeof document !== 'undefined') {
         const statusEl = document.getElementById('gameStatus');
         if (statusEl) statusEl.textContent = `遊戲結束！得分：${state.score}`;
@@ -433,7 +502,7 @@ function matchTyping(inputVal) {
 function init() {
     if (typeof document === 'undefined') return;
 
-    populateWordLists();
+    loadPredefinedWordLists();
 
     const nameInput = document.getElementById('playerName');
     const startBtn = document.getElementById('startGameBtn');
@@ -563,6 +632,7 @@ if (typeof module !== 'undefined' && module.exports) {
         gameTick,
         startGame,
         endGame,
-        matchTyping
+        matchTyping,
+        loadPredefinedWordLists
     };
 }

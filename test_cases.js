@@ -20,7 +20,8 @@ const {
     gameTick,
     startGame,
     endGame,
-    matchTyping
+    matchTyping,
+    loadPredefinedWordLists
 } = require('./main.js');
 
 describe('Basic Infrastructure', () => {
@@ -74,9 +75,9 @@ describe('Word Lists', () => {
 
         const lists = getWordLists();
         assertEqual(lists.length, 2);
-        assertEqual(lists[0].name, 'Default (a-z)');
-        assertEqual(lists[1].name, 'My List');
-        assertEqual(lists[1].words[0], 'hello');
+        assertEqual(lists[0].name, 'My List');
+        assertEqual(lists[1].name, 'Default (a-z)');
+        assertEqual(lists[0].words[0], 'hello');
     });
 });
 
@@ -187,9 +188,9 @@ describe('Config and Word List Upload/Management', () => {
         addWordList("Custom1", ["one", "two"]);
         
         const lists = getWordLists();
-        assertEqual(lists.length, 2); // default + Custom1
-        assertEqual(lists[1].name, "Custom1");
-        assertEqual(lists[1].words[1], "two");
+        assertEqual(lists.length, 2); // Custom1 + default
+        assertEqual(lists[0].name, "Custom1");
+        assertEqual(lists[0].words[1], "two");
     });
 
     it('should delete existing word lists', () => {
@@ -294,6 +295,39 @@ describe('Phase 5 Game Mechanics', () => {
         moveBlocksDown();
         assert(state.isGameOver);
         assertEqual(state.board[0][5], ' ');
+    });
+});
+
+describe('Predefined Word Lists and Ranked List Name', () => {
+    it('should load predefined list01.txt when present', async () => {
+        const fs = require('fs');
+        const path = require('path');
+        const filename = 'list01.txt';
+        const fileContent = "Predefined Animals\ndog\ncat\nbird\n";
+        
+        fs.writeFileSync(path.join(process.cwd(), filename), fileContent, 'utf-8');
+        try {
+            await loadPredefinedWordLists();
+            const lists = getWordLists();
+            const loaded = lists.find(l => l.name === 'Predefined Animals');
+            assert(loaded !== undefined, 'Should load Predefined Animals');
+            assertEqual(loaded.words.length, 3);
+            assertEqual(loaded.words[0], 'dog');
+        } finally {
+            fs.unlinkSync(path.join(process.cwd(), filename));
+        }
+    });
+
+    it('should save word list name in ranking', () => {
+        localStorage.clear();
+        state.wordList = { name: 'My Custom List', words: ['a'] };
+        saveScore('Charlie', 200, state.wordList.name);
+        
+        const rankData = JSON.parse(localStorage.getItem('ranking'));
+        assertEqual(rankData.length, 1);
+        assertEqual(rankData[0].name, 'Charlie');
+        assertEqual(rankData[0].score, 200);
+        assertEqual(rankData[0].wordListName, 'My Custom List');
     });
 });
 
