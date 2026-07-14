@@ -51,9 +51,9 @@ Users can switch freely between the Intro and Ranking scenes.
     * Easy: Base = 1
     * Normal: Base = 5 (e.g., a 3-cell block yields 15 points)
     * Hard: Base = 10
-* Duplicate Resolution: If multiple blocks contain duplicate content, priority is given to clearing the **lowest falling block** first.
 * Input Matching: Listen to every change in user input in real-time. If the input matches and clears a falling block, **automatically clear the user input field**.
-* Escape Key: Pressing **ESC** instantly clears the user input field.
+* During each check, comparison begins sequentially from the lowest block that is still falling. If the user input contains the content of the block, it is considered a successful match. Clear the first successfully matched block and increase the score.
+* Escape Key: Pressing **ESC** or **ENTER** instantly clears the user input field.
 
 # Data Structure
 
