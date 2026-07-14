@@ -10,7 +10,12 @@ const state = {
     playerName: '',
     difficulty: 'normal',
     wordList: null,
-    score: 0
+    score: 0,
+    board: null,
+    fallingBlocks: [],
+    gameIntervalId: null,
+    tickCount: 0,
+    isGameOver: false
 };
 
 function getWordLists() {
@@ -204,6 +209,10 @@ function renderCustomWordLists() {
 
 function switchScene(sceneName) {
     state.currentScene = sceneName;
+    if (sceneName !== 'game' && state.gameIntervalId) {
+        clearInterval(state.gameIntervalId);
+        state.gameIntervalId = null;
+    }
     
     if (typeof document !== 'undefined') {
         const scenes = ['intro', 'config', 'game', 'rank'];
@@ -246,6 +255,181 @@ function handleNameInput(nameInput, startBtn) {
     startBtn.disabled = val.length === 0 || val.length > 10;
 }
 
+function getDifficultyConfig(diff) {
+    if (diff === 'easy') return { interval: 1000, multiplier: 1 };
+    if (diff === 'hard') return { interval: 500, multiplier: 10 };
+    return { interval: 800, multiplier: 5 };
+}
+
+function initBoard() {
+    const board = [];
+    for (let r = 0; r < 20; r++) {
+        board.push(new Array(20).fill(null));
+    }
+    return board;
+}
+
+function isBoardEmpty(board) {
+    return board.every(row => row.every(cell => cell === null));
+}
+
+function checkBlockOverlap(block, yOffset, board) {
+    const checkY = block.y + yOffset;
+    if (checkY >= 20) return true;
+    for (let i = 0; i < block.width; i++) {
+        const checkX = block.x + i;
+        if (checkX < 0 || checkX >= 20) return true;
+        if (board[checkY][checkX] !== null) return true;
+    }
+    return false;
+}
+
+function spawnBlock() {
+    const wordList = state.wordList ? state.wordList.words : DEFAULT_WORD_LIST.words;
+    const activeWords = new Set(state.fallingBlocks.map(b => b.word));
+    let available = wordList.filter(w => !activeWords.has(w));
+    if (available.length === 0) available = wordList;
+    const word = available[Math.floor(Math.random() * available.length)];
+    const width = Math.max(1, Math.min(word.length, 4));
+    const x = Math.floor(Math.random() * (20 - width + 1));
+    const block = { word, x, y: 0, width };
+    if (checkBlockOverlap(block, 0, state.board)) {
+        state.isGameOver = true;
+    } else {
+        state.fallingBlocks.push(block);
+    }
+}
+
+function moveBlocksDown() {
+    state.fallingBlocks.sort((a, b) => b.y - a.y);
+    const toRemove = [];
+    for (const block of state.fallingBlocks) {
+        if (checkBlockOverlap(block, 1, state.board)) {
+            for (let i = 0; i < block.width; i++) {
+                state.board[block.y][block.x + i] = block.word[i] || ' ';
+            }
+            toRemove.push(block);
+            if (block.y <= 0) state.isGameOver = true;
+        } else {
+            block.y++;
+        }
+    }
+    state.fallingBlocks = state.fallingBlocks.filter(b => !toRemove.includes(b));
+}
+
+function gameTick() {
+    if (state.isGameOver) return;
+    state.tickCount++;
+    moveBlocksDown();
+    if (state.isGameOver) {
+        endGame();
+        return;
+    }
+    const empty = state.fallingBlocks.length === 0 && isBoardEmpty(state.board);
+    if (empty) {
+        spawnBlock();
+    } else if (state.tickCount % 3 === 0) {
+        spawnBlock();
+    }
+    if (state.isGameOver) {
+        endGame();
+        return;
+    }
+    drawGame();
+}
+
+function startGame() {
+    if (state.gameIntervalId) clearInterval(state.gameIntervalId);
+    state.score = 0;
+    state.board = initBoard();
+    state.fallingBlocks = [];
+    state.tickCount = 0;
+    state.isGameOver = false;
+    const diffConfig = getDifficultyConfig(state.difficulty);
+    if (typeof document !== 'undefined') {
+        const scoreEl = document.getElementById('gameScore');
+        if (scoreEl) scoreEl.textContent = `得分: 0`;
+        const statusEl = document.getElementById('gameStatus');
+        if (statusEl) statusEl.textContent = `遊戲進行中...`;
+        const inputEl = document.getElementById('gameTextInput');
+        if (inputEl) {
+            inputEl.value = '';
+            inputEl.focus();
+        }
+    }
+    spawnBlock();
+    drawGame();
+    state.gameIntervalId = setInterval(gameTick, diffConfig.interval);
+}
+
+function endGame() {
+    if (state.gameIntervalId) {
+        clearInterval(state.gameIntervalId);
+        state.gameIntervalId = null;
+    }
+    state.isGameOver = true;
+    saveScore(state.playerName, state.score);
+    if (typeof document !== 'undefined') {
+        const statusEl = document.getElementById('gameStatus');
+        if (statusEl) statusEl.textContent = `遊戲結束！得分：${state.score}`;
+    }
+}
+
+function drawGame() {
+    if (typeof document === 'undefined') return;
+    const canvas = document.getElementById('gameCanvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const cw = canvas.width, ch = canvas.height;
+    const cellW = cw / 20, cellH = ch / 20;
+    ctx.clearRect(0, 0, cw, ch);
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 20; i++) {
+        ctx.beginPath(); ctx.moveTo(i * cellW, 0); ctx.lineTo(i * cellW, ch); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, i * cellH); ctx.lineTo(cw, i * cellH); ctx.stroke();
+    }
+    ctx.fillStyle = '#7f8c8d';
+    for (let r = 0; r < 20; r++) {
+        for (let c = 0; c < 20; c++) {
+            if (state.board[r][c] !== null) {
+                ctx.fillRect(c * cellW + 1, r * cellH + 1, cellW - 2, cellH - 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText(state.board[r][c], c * cellW + cellW / 2, r * cellH + cellH / 2);
+                ctx.fillStyle = '#7f8c8d';
+            }
+        }
+    }
+    state.fallingBlocks.forEach(block => {
+        ctx.fillStyle = '#3498db';
+        ctx.fillRect(block.x * cellW + 1, block.y * cellH + 1, block.width * cellW - 2, cellH - 2);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(block.word, block.x * cellW + (block.width * cellW) / 2, block.y * cellH + cellH / 2);
+    });
+}
+
+function matchTyping(inputVal) {
+    if (state.isGameOver) return false;
+    const matchingBlocks = state.fallingBlocks.filter(b => b.word === inputVal);
+    if (matchingBlocks.length === 0) return false;
+    matchingBlocks.sort((a, b) => b.y - a.y);
+    const target = matchingBlocks[0];
+    state.fallingBlocks = state.fallingBlocks.filter(b => b !== target);
+    const diffConfig = getDifficultyConfig(state.difficulty);
+    state.score += diffConfig.multiplier * target.width;
+    if (typeof document !== 'undefined') {
+        const scoreEl = document.getElementById('gameScore');
+        if (scoreEl) scoreEl.textContent = `得分: ${state.score}`;
+    }
+    drawGame();
+    return true;
+}
+
 function init() {
     if (typeof document === 'undefined') return;
 
@@ -255,11 +439,9 @@ function init() {
     const startBtn = document.getElementById('startGameBtn');
     if (nameInput && startBtn) {
         nameInput.addEventListener('input', () => handleNameInput(nameInput, startBtn));
-        // Run once on load to ensure state sync
         handleNameInput(nameInput, startBtn);
     }
 
-    // Intro Buttons
     startBtn?.addEventListener('click', () => {
         const name = nameInput.value.trim();
         const difficulty = document.getElementById('difficultySelect').value;
@@ -271,7 +453,7 @@ function init() {
         state.wordList = lists[selectedIdx] || DEFAULT_WORD_LIST;
 
         switchScene('game');
-        triggerGameOver();
+        startGame();
     });
 
     document.getElementById('showRankBtn')?.addEventListener('click', () => {
@@ -282,7 +464,6 @@ function init() {
         switchScene('config');
     });
 
-    // Config Buttons
     const uploadWordsBtn = document.getElementById('uploadWordsBtn');
     const wordListFileInput = document.getElementById('wordListFileInput');
     if (uploadWordsBtn && wordListFileInput) {
@@ -320,17 +501,15 @@ function init() {
         switchScene('intro');
     });
 
-    // Game Buttons
     document.getElementById('restartGameBtn')?.addEventListener('click', () => {
         switchScene('game');
-        triggerGameOver();
+        startGame();
     });
 
     document.getElementById('backFromGameBtn')?.addEventListener('click', () => {
         switchScene('intro');
     });
 
-    // Rank Buttons
     document.getElementById('clearRankBtn')?.addEventListener('click', () => {
         if (typeof confirm === 'undefined' || confirm('確定要清空排行榜嗎？')) {
             clearRanking();
@@ -339,6 +518,19 @@ function init() {
 
     document.getElementById('backFromRankBtn')?.addEventListener('click', () => {
         switchScene('intro');
+    });
+
+    const gameInput = document.getElementById('gameTextInput');
+    gameInput?.addEventListener('input', () => {
+        const val = gameInput.value.trim();
+        if (matchTyping(val)) {
+            gameInput.value = '';
+        }
+    });
+    gameInput?.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            gameInput.value = '';
+        }
     });
 }
 
@@ -361,6 +553,16 @@ if (typeof module !== 'undefined' && module.exports) {
         addWordList,
         deleteWordList,
         renderCustomWordLists,
-        init
+        init,
+        getDifficultyConfig,
+        initBoard,
+        isBoardEmpty,
+        checkBlockOverlap,
+        spawnBlock,
+        moveBlocksDown,
+        gameTick,
+        startGame,
+        endGame,
+        matchTyping
     };
 }

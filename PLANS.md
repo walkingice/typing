@@ -49,7 +49,7 @@ Development plan. The agent **MUST** follow this plan and propose how to achieve
 
 ## Phase 5
 
-* [ ] Implement the Game Scene.
+* [x] Implement the Game Scene.
 * User chose word list is used to generate blocks.
 * Allow the user to input text to play game.
 

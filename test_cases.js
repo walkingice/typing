@@ -10,7 +10,17 @@ const {
     clearRanking,
     parseWordList,
     addWordList,
-    deleteWordList
+    deleteWordList,
+    getDifficultyConfig,
+    initBoard,
+    isBoardEmpty,
+    checkBlockOverlap,
+    spawnBlock,
+    moveBlocksDown,
+    gameTick,
+    startGame,
+    endGame,
+    matchTyping
 } = require('./main.js');
 
 describe('Basic Infrastructure', () => {
@@ -195,6 +205,95 @@ describe('Config and Word List Upload/Management', () => {
         customLists = JSON.parse(localStorage.getItem('words_list'));
         assertEqual(customLists.length, 1);
         assertEqual(customLists[0].name, "List B");
+    });
+});
+
+describe('Phase 5 Game Mechanics', () => {
+    it('should configure correct interval and score multiplier based on difficulty', () => {
+        const easy = getDifficultyConfig('easy');
+        assertEqual(easy.interval, 1000);
+        assertEqual(easy.multiplier, 1);
+
+        const normal = getDifficultyConfig('normal');
+        assertEqual(normal.interval, 800);
+        assertEqual(normal.multiplier, 5);
+
+        const hard = getDifficultyConfig('hard');
+        assertEqual(hard.interval, 500);
+        assertEqual(hard.multiplier, 10);
+    });
+
+    it('should initialize empty board correctly', () => {
+        const board = initBoard();
+        assertEqual(board.length, 20);
+        assertEqual(board[0].length, 20);
+        assert(isBoardEmpty(board));
+    });
+
+    it('should spawn blocks with width matching word length (max 4)', () => {
+        state.board = initBoard();
+        state.fallingBlocks = [];
+        state.wordList = { name: 'Test', words: ['testword'] }; // length 8
+        spawnBlock();
+        assertEqual(state.fallingBlocks.length, 1);
+        const block = state.fallingBlocks[0];
+        assertEqual(block.word, 'testword');
+        assertEqual(block.width, 4); // capped at 4
+        assert(block.x >= 0 && block.x <= 16);
+    });
+
+    it('should prioritize matching the lowest block when duplicate words exist', () => {
+        state.board = initBoard();
+        state.difficulty = 'normal';
+        state.score = 0;
+        state.isGameOver = false;
+        state.fallingBlocks = [
+            { word: 'abc', x: 2, y: 2, width: 3 },
+            { word: 'abc', x: 5, y: 5, width: 3 }
+        ];
+        const matched = matchTyping('abc');
+        assert(matched);
+        assertEqual(state.fallingBlocks.length, 1);
+        assertEqual(state.fallingBlocks[0].y, 2);
+        assertEqual(state.score, 15);
+    });
+
+    it('should move falling blocks down and land them at bottom or on other blocks', () => {
+        state.board = initBoard();
+        state.fallingBlocks = [
+            { word: 'a', x: 5, y: 18, width: 1 }
+        ];
+        
+        moveBlocksDown();
+        assertEqual(state.fallingBlocks.length, 1);
+        assertEqual(state.fallingBlocks[0].y, 19);
+
+        moveBlocksDown();
+        assertEqual(state.fallingBlocks.length, 0);
+        assertEqual(state.board[19][5], 'a');
+
+        state.fallingBlocks = [
+            { word: 'b', x: 5, y: 17, width: 1 }
+        ];
+        moveBlocksDown();
+        assertEqual(state.fallingBlocks[0].y, 18);
+        
+        moveBlocksDown();
+        assertEqual(state.fallingBlocks.length, 0);
+        assertEqual(state.board[18][5], 'b');
+    });
+
+    it('should trigger game over when a block lands at the top (y <= 0)', () => {
+        state.board = initBoard();
+        state.isGameOver = false;
+        state.fallingBlocks = [
+            { word: 'a', x: 5, y: 0, width: 1 }
+        ];
+        state.board[1][5] = 'x';
+
+        moveBlocksDown();
+        assert(state.isGameOver);
+        assertEqual(state.board[0][5], 'a');
     });
 });
 
