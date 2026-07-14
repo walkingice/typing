@@ -28,6 +28,33 @@
 
 Users can switch freely between the Intro and Ranking scenes.
 
+# Game Spec
+
+## System Configurations & Layout
+
+* Configurable Parameters: All game parameters are defined as `const` in the source code, allowing for easy adjustment and fine-tuning later.
+* Grid Layout: The game board consists of a **20x20 grid**.
+* Word Blocks: Each block spans **1x1 to 4x1 cells**, dynamically adjusting based on the word length.
+
+## Movement & Spawning
+
+* Spawn Mechanics: Blocks spawn horizontally at random positions and fall from the top of the grid.
+* Fall Speed: Blocks move down by 1 cell per tick. Speed scales by difficulty:
+    * Easy: 1 tick = 1.0 second
+    * Normal: 1 tick = 0.8 seconds
+    * Hard: 1 tick = 0.5 seconds
+* Spawn Timing: A new block spawns immediately if the board is completely cleared. Otherwise, a new block spawns **every 3 ticks**.
+
+## Game Logic & Input
+
+* Scoring System: Score = Base Multiplier × Number of Cells.
+    * Easy: Base = 1
+    * Normal: Base = 5 (e.g., a 3-cell block yields 15 points)
+    * Hard: Base = 10
+* Duplicate Resolution: If multiple blocks contain duplicate content, priority is given to clearing the **lowest falling block** first.
+* Input Matching: Listen to every change in user input in real-time. If the input matches and clears a falling block, **automatically clear the user input field**.
+* Escape Key: Pressing **ESC** instantly clears the user input field.
+
 # Data Structure
 
 * `localStorage` contains two entries:
