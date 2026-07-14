@@ -531,6 +531,9 @@ function init() {
         if (e.key === 'Escape') {
             gameInput.value = '';
         }
+        if (e.key === 'Enter') {
+            gameInput.value = '';
+        }
     });
 }
 
