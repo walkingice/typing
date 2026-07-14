@@ -107,6 +107,30 @@
             height: auto;
             display: block;
         }
+        #gameTextInput {
+            width: min(420px, calc(100vw - 80px));
+            box-sizing: border-box;
+            text-align: center;
+            margin: 10px 0 4px;
+            padding: 14px 18px;
+            border: 2px solid #f1c40f;
+            border-radius: 6px;
+            background-color: #ffffff;
+            color: #1f2933;
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 0;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(241, 196, 15, 0.16);
+        }
+        #gameTextInput:focus {
+            border-color: #f39c12;
+            box-shadow: 0 0 0 4px rgba(243, 156, 18, 0.24);
+        }
+        #gameTextInput::placeholder {
+            color: #6b7280;
+            font-weight: normal;
+        }
         .game-controls {
             margin-top: 20px;
         }
@@ -216,7 +240,7 @@
             </div>
             <canvas id="gameCanvas" width="500" height="500"></canvas>
             <div style="margin: 5px 0;">
-                <input type="text" id="gameTextInput" placeholder="在此輸入..." autocomplete="off" style="width: 250px; text-align: center; margin: 5px 0;">
+                <input type="text" id="gameTextInput" placeholder="在此輸入..." autocomplete="off">
             </div>
             <div class="game-controls">
                 <button id="restartGameBtn">重新開始</button>

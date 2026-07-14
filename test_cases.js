@@ -23,6 +23,8 @@ const {
     gameTick,
     startGame,
     endGame,
+    addEliminationAnimation,
+    pruneEliminationAnimations,
     matchTyping
 } = require('./main.js');
 
@@ -315,6 +317,7 @@ describe('Phase 5 Game Mechanics', () => {
         state.difficulty = 'easy';
         state.score = 0;
         state.isGameOver = false;
+        state.eliminatingBlocks = [];
         state.fallingBlocks = [
             { word: 'cat', x: 2, y: 4, width: 3 }
         ];
@@ -323,6 +326,8 @@ describe('Phase 5 Game Mechanics', () => {
 
         assert(matched);
         assertEqual(state.fallingBlocks.length, 0);
+        assertEqual(state.eliminatingBlocks.length, 1);
+        assertEqual(state.eliminatingBlocks[0].word, 'cat');
         assertEqual(state.score, 3);
     });
 
@@ -331,6 +336,7 @@ describe('Phase 5 Game Mechanics', () => {
         state.difficulty = 'normal';
         state.score = 0;
         state.isGameOver = false;
+        state.eliminatingBlocks = [];
         state.fallingBlocks = [
             { word: 'top', x: 2, y: 2, width: 3 },
             { word: 'lowest-miss', x: 2, y: 12, width: 4 },
@@ -344,6 +350,17 @@ describe('Phase 5 Game Mechanics', () => {
         assertEqual(state.fallingBlocks[0].word, 'top');
         assertEqual(state.fallingBlocks[1].word, 'lowest-miss');
         assertEqual(state.score, 20);
+    });
+
+    it('should prune finished elimination animations', () => {
+        state.eliminatingBlocks = [];
+        addEliminationAnimation({ word: 'done', x: 1, y: 2, width: 4 }, 1000);
+
+        pruneEliminationAnimations(1259);
+        assertEqual(state.eliminatingBlocks.length, 1);
+
+        pruneEliminationAnimations(1260);
+        assertEqual(state.eliminatingBlocks.length, 0);
     });
 
     it('should move falling blocks down and land them at bottom or on other blocks', () => {

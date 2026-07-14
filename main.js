@@ -6,6 +6,7 @@ const DEFAULT_WORD_LIST = {
 };
 
 const PREDEFINED_WORD_LIST_FILES = ['list01.txt', 'list02.txt'];
+const ELIMINATION_ANIMATION_MS = 260;
 
 let predefinedWordLists = [];
 
@@ -17,6 +18,8 @@ const state = {
     score: 0,
     board: null,
     fallingBlocks: [],
+    eliminatingBlocks: [],
+    animationFrameId: null,
     gameIntervalId: null,
     tickCount: 0,
     isGameOver: false
@@ -385,6 +388,8 @@ function startGame() {
     state.score = 0;
     state.board = initBoard();
     state.fallingBlocks = [];
+    state.eliminatingBlocks = [];
+    state.animationFrameId = null;
     state.tickCount = 0;
     state.isGameOver = false;
     const diffConfig = getDifficultyConfig(state.difficulty);
@@ -417,6 +422,36 @@ function endGame() {
     }
 }
 
+function getEliminationProgress(animation, now) {
+    return Math.min((now - animation.startedAt) / animation.duration, 1);
+}
+
+function addEliminationAnimation(block, now = Date.now()) {
+    state.eliminatingBlocks.push({
+        word: block.word,
+        x: block.x,
+        y: block.y,
+        width: block.width,
+        startedAt: now,
+        duration: ELIMINATION_ANIMATION_MS
+    });
+}
+
+function pruneEliminationAnimations(now = Date.now()) {
+    state.eliminatingBlocks = state.eliminatingBlocks.filter(animation => {
+        return getEliminationProgress(animation, now) < 1;
+    });
+}
+
+function requestEliminationRedraw() {
+    if (typeof requestAnimationFrame === 'undefined') return;
+    if (state.animationFrameId !== null) return;
+    state.animationFrameId = requestAnimationFrame(() => {
+        state.animationFrameId = null;
+        drawGame();
+    });
+}
+
 function drawGame() {
     if (typeof document === 'undefined') return;
     const canvas = document.getElementById('gameCanvas');
@@ -445,13 +480,45 @@ function drawGame() {
             }
         }
     }
-    state.fallingBlocks.forEach(block => {
-        ctx.fillStyle = '#3498db';
-        ctx.fillRect(block.x * cellW + 1, block.y * cellH + 1, block.width * cellW - 2, cellH - 2);
+    state.fallingBlocks.forEach(block => drawBlock(ctx, block, cellW, cellH, '#3498db', 1));
+    drawEliminatingBlocks(ctx, cellW, cellH);
+    pruneEliminationAnimations();
+    if (state.eliminatingBlocks.length > 0) requestEliminationRedraw();
+}
+
+function drawBlock(ctx, block, cellW, cellH, color, alpha) {
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.fillRect(block.x * cellW + 1, block.y * cellH + 1, block.width * cellW - 2, cellH - 2);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(block.word, block.x * cellW + (block.width * cellW) / 2, block.y * cellH + cellH / 2);
+    ctx.restore();
+}
+
+function drawEliminatingBlocks(ctx, cellW, cellH, now = Date.now()) {
+    state.eliminatingBlocks.forEach(animation => {
+        const progress = getEliminationProgress(animation, now);
+        const alpha = 1 - progress;
+        const inset = progress * -4;
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = '#f39c12';
+        ctx.fillRect(
+            animation.x * cellW + 1 + inset,
+            animation.y * cellH + 1 + inset,
+            animation.width * cellW - 2 - inset * 2,
+            cellH - 2 - inset * 2
+        );
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 14px Arial';
-        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        ctx.fillText(block.word, block.x * cellW + (block.width * cellW) / 2, block.y * cellH + cellH / 2);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(animation.word, animation.x * cellW + (animation.width * cellW) / 2, animation.y * cellH + cellH / 2);
+        ctx.restore();
     });
 }
 
@@ -465,6 +532,7 @@ function matchTyping(inputVal) {
     const target = findMatchingFallingBlock(inputVal);
     if (!target) return false;
     state.fallingBlocks = state.fallingBlocks.filter(b => b !== target);
+    addEliminationAnimation(target);
     const diffConfig = getDifficultyConfig(state.difficulty);
     state.score += diffConfig.multiplier * target.width;
     if (typeof document !== 'undefined') {
@@ -635,6 +703,8 @@ if (typeof module !== 'undefined' && module.exports) {
         gameTick,
         startGame,
         endGame,
+        addEliminationAnimation,
+        pruneEliminationAnimations,
         matchTyping
     };
 }
