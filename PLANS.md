@@ -44,7 +44,7 @@ Development plan. The agent **MUST** follow this plan and propose how to achieve
 
 ## Phase 4
 
-* [ ] Implement the Ranking Scene.
+* [x] Implement the Ranking Scene.
 * Allow the user to view the ranking.
 
 ## Phase 5
