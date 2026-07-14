@@ -270,7 +270,7 @@ describe('Phase 5 Game Mechanics', () => {
 
         moveBlocksDown();
         assertEqual(state.fallingBlocks.length, 0);
-        assertEqual(state.board[19][5], 'a');
+        assertEqual(state.board[19][5], ' ');
 
         state.fallingBlocks = [
             { word: 'b', x: 5, y: 17, width: 1 }
@@ -280,7 +280,7 @@ describe('Phase 5 Game Mechanics', () => {
         
         moveBlocksDown();
         assertEqual(state.fallingBlocks.length, 0);
-        assertEqual(state.board[18][5], 'b');
+        assertEqual(state.board[18][5], ' ');
     });
 
     it('should trigger game over when a block lands at the top (y <= 0)', () => {
@@ -293,7 +293,7 @@ describe('Phase 5 Game Mechanics', () => {
 
         moveBlocksDown();
         assert(state.isGameOver);
-        assertEqual(state.board[0][5], 'a');
+        assertEqual(state.board[0][5], ' ');
     });
 });
 

@@ -306,7 +306,7 @@ function moveBlocksDown() {
     for (const block of state.fallingBlocks) {
         if (checkBlockOverlap(block, 1, state.board)) {
             for (let i = 0; i < block.width; i++) {
-                state.board[block.y][block.x + i] = block.word[i] || ' ';
+                state.board[block.y][block.x + i] = ' ';
             }
             toRemove.push(block);
             if (block.y <= 0) state.isGameOver = true;

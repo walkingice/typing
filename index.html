@@ -102,7 +102,7 @@
             border: 2px solid #3498db;
             border-radius: 5px;
             background-color: #ffffff;
-            margin: 20px auto;
+            margin: 10px auto;
             max-width: 100%;
             height: auto;
             display: block;
@@ -209,14 +209,14 @@
         </div>
 
         <div id="scene-game" class="scene">
-            <div id="gameInfo">
-                <h2>Game scene</h2>
-                <div id="gameScore" style="font-size: 20px; font-weight: bold; margin: 10px 0; color: #f1c40f;">得分: 0</div>
-                <div id="gameStatus">準備開始遊戲...</div>
+            <div id="gameInfo" style="margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
+                <h2 style="margin: 0; font-size: 20px;">Game scene</h2>
+                <div id="gameStatus" style="margin: 0; font-size: 14px; flex-grow: 1; text-align: left;">準備開始遊戲...</div>
+                <div id="gameScore" style="font-size: 18px; font-weight: bold; margin: 0; color: #f1c40f;">得分: 0</div>
             </div>
-            <canvas id="gameCanvas" width="400" height="400"></canvas>
-            <div style="margin: 10px 0;">
-                <input type="text" id="gameTextInput" placeholder="在此輸入..." autocomplete="off" style="width: 250px; text-align: center;">
+            <canvas id="gameCanvas" width="500" height="500"></canvas>
+            <div style="margin: 5px 0;">
+                <input type="text" id="gameTextInput" placeholder="在此輸入..." autocomplete="off" style="width: 250px; text-align: center; margin: 5px 0;">
             </div>
             <div class="game-controls">
                 <button id="restartGameBtn">重新開始</button>
