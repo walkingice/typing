@@ -179,22 +179,41 @@ describe('Ranking System', () => {
 describe('Validation and Game End mock', () => {
     it('should validate name length', () => {
         const dummyInput = { value: '' };
-        const dummyBtn = { disabled: false };
+        const dummyBtn = {
+            disabled: false,
+            classList: {
+                classes: new Set(),
+                toggle(name, shouldAdd) {
+                    if (shouldAdd) {
+                        this.classes.add(name);
+                    } else {
+                        this.classes.delete(name);
+                    }
+                },
+                contains(name) {
+                    return this.classes.has(name);
+                }
+            }
+        };
         
         handleNameInput(dummyInput, dummyBtn);
         assertEqual(dummyBtn.disabled, true);
+        assertEqual(dummyBtn.classList.contains('is-disabled'), true);
 
         dummyInput.value = '   '; // spaces only
         handleNameInput(dummyInput, dummyBtn);
         assertEqual(dummyBtn.disabled, true);
+        assertEqual(dummyBtn.classList.contains('is-disabled'), true);
 
         dummyInput.value = 'Alice';
         handleNameInput(dummyInput, dummyBtn);
         assertEqual(dummyBtn.disabled, false);
+        assertEqual(dummyBtn.classList.contains('is-disabled'), false);
 
         dummyInput.value = 'abcdefghijk'; // 11 characters
         handleNameInput(dummyInput, dummyBtn);
         assertEqual(dummyBtn.disabled, true);
+        assertEqual(dummyBtn.classList.contains('is-disabled'), true);
     });
 
     it('should trigger game over and record random score', () => {

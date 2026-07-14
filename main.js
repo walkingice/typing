@@ -297,7 +297,9 @@ function triggerGameOver() {
 
 function handleNameInput(nameInput, startBtn) {
     const val = nameInput.value.trim();
-    startBtn.disabled = val.length === 0 || val.length > 10;
+    const isDisabled = val.length === 0 || val.length > 10;
+    startBtn.disabled = isDisabled;
+    startBtn.classList?.toggle('is-disabled', isDisabled);
 }
 
 function getDifficultyConfig(diff) {

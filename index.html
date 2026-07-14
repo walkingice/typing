@@ -73,6 +73,16 @@
         button:hover {
             background-color: #2980b9;
         }
+        button:disabled,
+        button.is-disabled {
+            background-color: #95a5a6;
+            color: #ecf0f1;
+            cursor: not-allowed;
+        }
+        button:disabled:hover,
+        button.is-disabled:hover {
+            background-color: #95a5a6;
+        }
         button.secondary {
             background-color: #95a5a6;
         }
