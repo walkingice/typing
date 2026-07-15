@@ -140,6 +140,13 @@
             flex-wrap: wrap;
             margin-bottom: 10px;
         }
+        .game-toolbar-left,
+        .game-toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
         .game-toolbar .button-group {
             margin: 0;
         }
@@ -177,12 +184,13 @@
             border-radius: 5px;
             background-color: #ffffff;
             margin: 10px auto;
+            width: min(600px, calc(100vw - 48px));
             max-width: 100%;
             height: auto;
             display: block;
         }
         #gameTextInput {
-            width: min(420px, calc(100vw - 80px));
+            width: min(420px, calc(100vw - 64px));
             box-sizing: border-box;
             text-align: center;
             margin: 10px 0 4px;
@@ -257,13 +265,17 @@
         /* Responsive design  */
         @media (max-width: 100vw) {
             #gameCanvas {
-                max-width: calc(100vw - 60px);
+                max-width: calc(100vw - 48px);
                 height: auto;
             }
             #gameSummary {
                 white-space: normal;
             }
             .game-toolbar {
+                justify-content: center;
+            }
+            .game-toolbar-left,
+            .game-toolbar-right {
                 justify-content: center;
             }
         }
@@ -307,20 +319,24 @@
         <div id="scene-game" class="scene">
             <div id="gameInfo">
                 <div class="game-toolbar">
-                    <div id="gameSummary"><span class="summary-status">準備開始遊戲...</span><span class="summary-divider">|</span><span class="summary-score">得分: 0</span></div>
-                    <div class="button-group compact" role="group" aria-label="遊戲難度">
-                        <button type="button" class="toggle-button compact-btn active" data-difficulty="easy">簡單</button>
-                        <button type="button" class="toggle-button compact-btn" data-difficulty="normal">一般</button>
-                        <button type="button" class="toggle-button compact-btn" data-difficulty="hard">困難</button>
+                    <div class="game-toolbar-left">
+                        <div id="gameSummary"><span class="summary-status">準備開始遊戲...</span><span class="summary-divider">|</span><span class="summary-score">得分: 0</span></div>
+                        <div class="button-group compact" role="group" aria-label="遊戲難度">
+                            <button type="button" class="toggle-button compact-btn active" data-difficulty="easy">簡單</button>
+                            <button type="button" class="toggle-button compact-btn" data-difficulty="normal">一般</button>
+                            <button type="button" class="toggle-button compact-btn" data-difficulty="hard">困難</button>
+                        </div>
                     </div>
-                    <div class="game-actions">
-                        <button id="restartGameBtn">重新開始</button>
-                        <button id="stopGameBtn" class="secondary">立即結束</button>
-                        <button id="backFromGameBtn" class="secondary">返回</button>
+                    <div class="game-toolbar-right">
+                        <div class="game-actions">
+                            <button id="restartGameBtn">重新開始</button>
+                            <button id="stopGameBtn" class="secondary">立即結束</button>
+                            <button id="backFromGameBtn" class="secondary">返回</button>
+                        </div>
                     </div>
                 </div>
             </div>
-            <canvas id="gameCanvas" width="500" height="500"></canvas>
+            <canvas id="gameCanvas" width="600" height="600"></canvas>
             <div style="margin: 5px 0;">
                 <input type="text" id="gameTextInput" placeholder="在此輸入..." autocomplete="off">
             </div>

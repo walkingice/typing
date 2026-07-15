@@ -2,6 +2,7 @@ const { describe, it, assertEqual, assert, getSummary, runPendingTests } = requi
 const { 
     DEFAULT_WORD_LIST, 
     PREDEFINED_WORD_LIST_FILES,
+    GAME_CANVAS_SIZE,
     state, 
     setPredefinedWordLists,
     loadPredefinedWordLists,
@@ -19,6 +20,7 @@ const {
     addWordList,
     deleteWordList,
     getDifficultyConfig,
+    getBlockTextFont,
     initBoard,
     isBoardEmpty,
     checkBlockOverlap,
@@ -303,6 +305,15 @@ describe('Difficulty Button State', () => {
     it('should build a compact game summary text', () => {
         const summary = buildGameSummaryText('遊戲進行中...', 18);
         assertEqual(summary, '狀態：遊戲進行中... | 得分：18');
+    });
+
+    it('should use a serif font for block text', () => {
+        assertEqual(getBlockTextFont(), 'normal 14px Georgia, "Times New Roman", serif');
+        assertEqual(getBlockTextFont('bold'), 'bold 14px Georgia, "Times New Roman", serif');
+    });
+
+    it('should expose the larger game canvas size', () => {
+        assertEqual(GAME_CANVAS_SIZE, 600);
     });
 
     it('should toggle active state on the selected difficulty button', () => {

@@ -5,6 +5,7 @@ const DEFAULT_WORD_LIST = {
     words: Array.from({ length: 26 }, (_, i) => String.fromCharCode(97 + i))
 };
 
+const GAME_CANVAS_SIZE = 600;
 const PREDEFINED_WORD_LIST_FILES = ['list01.txt', 'list02.txt'];
 const ELIMINATION_ANIMATION_MS = 260;
 
@@ -315,6 +316,10 @@ function buildGameSummaryText(statusText, score) {
     return `狀態：${statusText} | 得分：${score}`;
 }
 
+function getBlockTextFont(weight = 'normal') {
+    return `${weight} 14px Georgia, "Times New Roman", serif`;
+}
+
 function updateGameSummary(statusText, score) {
     if (typeof document === 'undefined') return;
     const summaryEl = document.getElementById('gameSummary');
@@ -511,7 +516,7 @@ function drawGame() {
             if (c > 0 && state.board[r][c - 1] === block) continue;
             ctx.fillRect(c * cellW + 1, r * cellH + 1, block.width * cellW - 2, cellH - 2);
             ctx.fillStyle = '#ffffff';
-            ctx.font = '12px Arial';
+    ctx.font = getBlockTextFont();
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText(block.word, c * cellW + (block.width * cellW) / 2, r * cellH + cellH / 2);
@@ -535,7 +540,7 @@ function drawBlock(ctx, block, cellW, cellH, color, alpha) {
     ctx.fillStyle = color;
     ctx.fillRect(block.x * cellW + 1, block.y * cellH + 1, block.width * cellW - 2, cellH - 2);
     ctx.fillStyle = '#ffffff';
-    ctx.font = 'bold 14px Arial';
+    ctx.font = getBlockTextFont('bold');
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(block.word, block.x * cellW + (block.width * cellW) / 2, block.y * cellH + cellH / 2);
@@ -557,7 +562,7 @@ function drawEliminatingBlocks(ctx, cellW, cellH, now = Date.now()) {
             cellH - 2 - inset * 2
         );
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 14px Arial';
+    ctx.font = getBlockTextFont('bold');
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(animation.word, animation.x * cellW + (animation.width * cellW) / 2, animation.y * cellH + cellH / 2);
@@ -741,6 +746,7 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         DEFAULT_WORD_LIST,
+        GAME_CANVAS_SIZE,
         PREDEFINED_WORD_LIST_FILES,
         state,
         setPredefinedWordLists,
@@ -748,6 +754,7 @@ if (typeof module !== 'undefined' && module.exports) {
         getWordLists,
         setActiveButtonGroup,
         buildGameSummaryText,
+        getBlockTextFont,
         refreshGameInterval,
         focusGameInput,
         saveScore,
