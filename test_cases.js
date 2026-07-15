@@ -1,4 +1,5 @@
 const { describe, it, assertEqual, assert, getSummary, runPendingTests } = require('./test_lib.js');
+const fs = require('fs');
 const { 
     DEFAULT_WORD_LIST, 
     PREDEFINED_WORD_LIST_FILES,
@@ -309,8 +310,8 @@ describe('Difficulty Button State', () => {
     });
 
     it('should use a serif font for block text', () => {
-        assertEqual(getBlockTextFont(), 'normal 14px Georgia, "Times New Roman", serif');
-        assertEqual(getBlockTextFont('bold'), 'bold 14px Georgia, "Times New Roman", serif');
+        assertEqual(getBlockTextFont(), 'normal 20px Georgia, "Times New Roman", serif');
+        assertEqual(getBlockTextFont('bold'), 'bold 20px Georgia, "Times New Roman", serif');
     });
 
     it('should expose the larger game canvas size', () => {
@@ -705,6 +706,14 @@ describe('Phase 5 Game Mechanics', () => {
         } finally {
             global.document = originalDocument;
         }
+    });
+});
+
+describe('Page Footer', () => {
+    it('should link to the project GitHub repository', () => {
+        const html = fs.readFileSync('./index.html', 'utf8');
+        assert(html.includes('href="https://github.com/walkingice/typing"'));
+        assert(html.includes('GitHub Repository'));
     });
 });
 
