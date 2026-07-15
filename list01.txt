@@ -539,7 +539,6 @@ downtown
 dozen
 Dr.
 dragon
-Dragon-boat
 drama
 drank
 draw
@@ -568,7 +567,6 @@ dumb
 dumpling
 during
 duty
-e-mail
 each
 eagle
 ear
@@ -806,7 +804,6 @@ golden
 golf
 gone
 good
-good-bye
 goodness
 goose
 got
@@ -858,7 +855,6 @@ hanger
 happen
 happy
 hard
-hard-working
 hardly
 has
 hat
@@ -1256,7 +1252,6 @@ news
 newspaper
 next
 nice
-nice-looking
 niece
 night
 nine
@@ -1317,7 +1312,6 @@ out
 outside
 oven
 over
-over-weight
 overpass
 overseas
 oversleep
@@ -1554,7 +1548,6 @@ rode
 role
 roll
 roller
-roller-skating
 roof
 room
 root
@@ -1757,7 +1750,6 @@ sound
 soup
 sour
 south
-soy-sauce
 space
 spaghetti
 speak
@@ -1858,7 +1850,6 @@ swing
 swum
 symbol
 system
-T-shirt
 table
 tail
 Taiwan
@@ -2009,7 +2000,6 @@ ugly
 umbrella
 uncle
 under
-under-weight
 underline
 underpass
 understand
@@ -2029,7 +2019,6 @@ use
 useful
 usual
 usually
-V-ing
 vacation
 valley
 valuable
