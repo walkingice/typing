@@ -94,6 +94,15 @@ function populateWordLists() {
     });
 }
 
+function setActiveButtonGroup(buttons, activeValue) {
+    buttons.forEach(button => {
+        const buttonValue = button.dataset.difficulty || button.dataset.value;
+        const isActive = buttonValue === activeValue;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-pressed', String(isActive));
+    });
+}
+
 function saveScore(name, score) {
     let ranking = [];
     try {
@@ -306,6 +315,22 @@ function getDifficultyConfig(diff) {
     if (diff === 'easy') return { interval: 1000, multiplier: 1 };
     if (diff === 'hard') return { interval: 500, multiplier: 10 };
     return { interval: 800, multiplier: 5 };
+}
+
+function refreshGameInterval() {
+    if (typeof setInterval === 'undefined' || typeof clearInterval === 'undefined') return;
+    if (state.currentScene !== 'game' || state.isGameOver) return;
+
+    if (state.gameIntervalId) {
+        clearInterval(state.gameIntervalId);
+    }
+    const diffConfig = getDifficultyConfig(state.difficulty);
+    state.gameIntervalId = setInterval(gameTick, diffConfig.interval);
+}
+
+function focusGameInput() {
+    if (typeof document === 'undefined') return;
+    document.getElementById('gameTextInput')?.focus();
 }
 
 function initBoard() {
@@ -562,12 +587,10 @@ function bindIntroControls() {
 
     startBtn?.addEventListener('click', () => {
         const name = nameInput.value.trim();
-        const difficulty = document.getElementById('difficultySelect').value;
         const selectedIdx = document.getElementById('wordListSelect').value;
         const lists = getWordLists();
 
         state.playerName = name;
-        state.difficulty = difficulty;
         state.wordList = lists[selectedIdx] || DEFAULT_WORD_LIST;
 
         switchScene('game');
@@ -581,6 +604,25 @@ function bindIntroControls() {
     document.getElementById('showConfigBtn')?.addEventListener('click', () => {
         switchScene('config');
     });
+}
+
+function bindDifficultyControls() {
+    if (typeof document === 'undefined') return;
+    const buttons = Array.from(document.querySelectorAll('[data-difficulty]'));
+    if (buttons.length === 0) return;
+
+    const syncButtons = () => setActiveButtonGroup(buttons, state.difficulty);
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            state.difficulty = button.dataset.difficulty;
+            syncButtons();
+            refreshGameInterval();
+            focusGameInput();
+        });
+    });
+
+    syncButtons();
 }
 
 function showUploadError(err) {
@@ -625,6 +667,8 @@ function bindConfigControls() {
 }
 
 function bindGameControls() {
+    bindDifficultyControls();
+
     document.getElementById('restartGameBtn')?.addEventListener('click', () => {
         switchScene('game');
         startGame();
@@ -685,6 +729,9 @@ if (typeof module !== 'undefined' && module.exports) {
         setPredefinedWordLists,
         loadPredefinedWordLists,
         getWordLists,
+        setActiveButtonGroup,
+        refreshGameInterval,
+        focusGameInput,
         saveScore,
         switchScene,
         triggerGameOver,

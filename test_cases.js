@@ -6,6 +6,9 @@ const {
     setPredefinedWordLists,
     loadPredefinedWordLists,
     getWordLists, 
+    setActiveButtonGroup,
+    refreshGameInterval,
+    focusGameInput,
     saveScore, 
     switchScene, 
     triggerGameOver, 
@@ -226,6 +229,107 @@ describe('Validation and Game End mock', () => {
         assertEqual(rankData.length, 1);
         assertEqual(rankData[0].name, 'TestPlayer');
         assertEqual(rankData[0].score, state.score);
+    });
+});
+
+describe('Difficulty Button State', () => {
+    it('should toggle active state on the selected difficulty button', () => {
+        const buttons = [
+            {
+                dataset: { difficulty: 'easy' },
+                classList: {
+                    classes: new Set(),
+                    toggle(name, shouldAdd) {
+                        if (shouldAdd) this.classes.add(name);
+                        else this.classes.delete(name);
+                    },
+                    contains(name) {
+                        return this.classes.has(name);
+                    }
+                },
+                setAttribute(name, value) {
+                    this[name] = value;
+                }
+            },
+            {
+                dataset: { difficulty: 'normal' },
+                classList: {
+                    classes: new Set(),
+                    toggle(name, shouldAdd) {
+                        if (shouldAdd) this.classes.add(name);
+                        else this.classes.delete(name);
+                    },
+                    contains(name) {
+                        return this.classes.has(name);
+                    }
+                },
+                setAttribute(name, value) {
+                    this[name] = value;
+                }
+            }
+        ];
+
+        setActiveButtonGroup(buttons, 'normal');
+
+        assertEqual(buttons[0].classList.contains('active'), false);
+        assertEqual(buttons[1].classList.contains('active'), true);
+        assertEqual(buttons[0]['aria-pressed'], 'false');
+        assertEqual(buttons[1]['aria-pressed'], 'true');
+    });
+
+    it('should refresh the running game interval when difficulty changes', () => {
+        const originalSetInterval = global.setInterval;
+        const originalClearInterval = global.clearInterval;
+        const calls = [];
+        try {
+            global.setInterval = (fn, delay) => {
+                calls.push(['set', delay]);
+                return { delay };
+            };
+            global.clearInterval = id => {
+                calls.push(['clear', id.delay]);
+            };
+
+            state.currentScene = 'game';
+            state.isGameOver = false;
+            state.difficulty = 'hard';
+            state.gameIntervalId = { delay: 800 };
+
+            refreshGameInterval();
+
+            assertEqual(calls[0][0], 'clear');
+            assertEqual(calls[0][1], 800);
+            assertEqual(calls[1][0], 'set');
+            assertEqual(calls[1][1], 500);
+        } finally {
+            global.setInterval = originalSetInterval;
+            global.clearInterval = originalClearInterval;
+        }
+    });
+
+    it('should focus the game input when difficulty changes', () => {
+        const originalDocument = global.document;
+        const focusCalls = [];
+        try {
+            global.document = {
+                getElementById(id) {
+                    if (id === 'gameTextInput') {
+                        return {
+                            focus() {
+                                focusCalls.push('focused');
+                            }
+                        };
+                    }
+                    return null;
+                }
+            };
+
+            focusGameInput();
+            assertEqual(focusCalls.length, 1);
+            assertEqual(focusCalls[0], 'focused');
+        } finally {
+            global.document = originalDocument;
+        }
     });
 });
 

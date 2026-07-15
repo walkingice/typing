@@ -89,6 +89,26 @@
         button.secondary:hover {
             background-color: #7f8c8d;
         }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        .toggle-button {
+            background-color: #3b4d61;
+            border: 1px solid transparent;
+        }
+        .toggle-button:hover {
+            background-color: #2f3f52;
+        }
+        .toggle-button.active {
+            background-color: #f1c40f;
+            color: #1f2933;
+            border-color: #f39c12;
+            box-shadow: 0 0 0 2px rgba(243, 156, 18, 0.18);
+        }
         #playerName {
             max-width: 200px;
         }
@@ -209,14 +229,6 @@
                 <input type="text" id="playerName" placeholder="請輸入您的姓名" maxlength="10">
             </div>
             <div class="input-group">
-                <label for="difficultySelect">遊戲難度:</label>
-                <select id="difficultySelect">
-                    <option value="easy">簡單 (Easy)</option>
-                    <option value="normal" selected>一般 (Normal)</option>
-                    <option value="hard">困難 (Hard)</option>
-                </select>
-            </div>
-            <div class="input-group">
                 <label for="wordListSelect">單字列表:</label>
                 <select id="wordListSelect">
                 </select>
@@ -247,6 +259,14 @@
                 <h2 style="margin: 0; font-size: 20px;">Game scene</h2>
                 <div id="gameStatus" style="margin: 0; font-size: 14px; flex-grow: 1; text-align: left;">準備開始遊戲...</div>
                 <div id="gameScore" style="font-size: 18px; font-weight: bold; margin: 0; color: #f1c40f;">得分: 0</div>
+            </div>
+            <div class="input-group" style="margin-top: 0;">
+                <label>遊戲難度:</label>
+                <div class="button-group" role="group" aria-label="遊戲難度">
+                    <button type="button" class="toggle-button active" data-difficulty="easy">簡單</button>
+                    <button type="button" class="toggle-button" data-difficulty="normal">一般</button>
+                    <button type="button" class="toggle-button" data-difficulty="hard">困難</button>
+                </div>
             </div>
             <canvas id="gameCanvas" width="500" height="500"></canvas>
             <div style="margin: 5px 0;">
