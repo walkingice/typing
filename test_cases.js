@@ -9,6 +9,7 @@ const {
     getWordLists, 
     setActiveButtonGroup,
     buildGameSummaryText,
+    drawBlock,
     refreshGameInterval,
     focusGameInput,
     saveScore, 
@@ -613,6 +614,39 @@ describe('Phase 5 Game Mechanics', () => {
 
         state.isGameOver = true;
         assertEqual(getFallingBlockColor(), '#7f8c8d');
+    });
+
+    it('should draw block text with normal font and 1px spacing', () => {
+        const calls = [];
+        const ctx = {
+            save() {},
+            restore() {},
+            fillRect() {},
+            measureText(char) {
+                return { width: char === 'i' ? 4 : 8 };
+            },
+            set globalAlpha(value) {},
+            set fillStyle(value) {},
+            set font(value) {
+                calls.push({ type: 'font', value });
+            },
+            set textAlign(value) {},
+            set textBaseline(value) {},
+            fillText(text, x, y) {
+                calls.push({ type: 'fillText', text, x, y });
+            }
+        };
+
+        drawBlock(ctx, { word: 'cat', x: 2, y: 3, width: 3 }, 20, 20, '#3498db', 1);
+
+        assert(calls.some(call => call.type === 'font' && call.value === getBlockTextFont()));
+        const textCalls = calls.filter(call => call.type === 'fillText');
+        assertEqual(textCalls.length, 3);
+        assertEqual(textCalls[0].text, 'c');
+        assertEqual(textCalls[1].text, 'a');
+        assertEqual(textCalls[2].text, 't');
+        assertEqual(textCalls[1].x - textCalls[0].x, 9);
+        assertEqual(textCalls[2].x - textCalls[1].x, 9);
     });
 
     it('should redraw falling blocks in grey when the game ends', () => {

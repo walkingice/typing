@@ -320,6 +320,21 @@ function getBlockTextFont(weight = 'normal') {
     return `${weight} 14px Georgia, "Times New Roman", serif`;
 }
 
+function drawWordText(ctx, word, centerX, centerY, spacing = 1) {
+    const chars = [...word];
+    const measureChar = typeof ctx.measureText === 'function'
+        ? char => ctx.measureText(char).width
+        : () => 8;
+    const charWidths = chars.map(char => measureChar(char));
+    const totalWidth = charWidths.reduce((sum, width) => sum + width, 0) + Math.max(0, chars.length - 1) * spacing;
+    let cursorX = centerX - totalWidth / 2;
+    chars.forEach((char, index) => {
+        const width = charWidths[index];
+        ctx.fillText(char, cursorX + width / 2, centerY);
+        cursorX += width + spacing;
+    });
+}
+
 function updateGameSummary(statusText, score) {
     if (typeof document === 'undefined') return;
     const summaryEl = document.getElementById('gameSummary');
@@ -540,10 +555,10 @@ function drawBlock(ctx, block, cellW, cellH, color, alpha) {
     ctx.fillStyle = color;
     ctx.fillRect(block.x * cellW + 1, block.y * cellH + 1, block.width * cellW - 2, cellH - 2);
     ctx.fillStyle = '#ffffff';
-    ctx.font = getBlockTextFont('bold');
+    ctx.font = getBlockTextFont();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(block.word, block.x * cellW + (block.width * cellW) / 2, block.y * cellH + cellH / 2);
+    drawWordText(ctx, block.word, block.x * cellW + (block.width * cellW) / 2, block.y * cellH + cellH / 2);
     ctx.restore();
 }
 
@@ -562,10 +577,10 @@ function drawEliminatingBlocks(ctx, cellW, cellH, now = Date.now()) {
             cellH - 2 - inset * 2
         );
         ctx.fillStyle = '#ffffff';
-    ctx.font = getBlockTextFont('bold');
+        ctx.font = getBlockTextFont();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(animation.word, animation.x * cellW + (animation.width * cellW) / 2, animation.y * cellH + cellH / 2);
+        drawWordText(ctx, animation.word, animation.x * cellW + (animation.width * cellW) / 2, animation.y * cellH + cellH / 2);
         ctx.restore();
     });
 }
@@ -755,6 +770,8 @@ if (typeof module !== 'undefined' && module.exports) {
         setActiveButtonGroup,
         buildGameSummaryText,
         getBlockTextFont,
+        drawWordText,
+        drawBlock,
         refreshGameInterval,
         focusGameInput,
         saveScore,
