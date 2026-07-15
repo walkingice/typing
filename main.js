@@ -5,6 +5,7 @@ const DEFAULT_WORD_LIST = {
     words: Array.from({ length: 26 }, (_, i) => String.fromCharCode(97 + i))
 };
 
+const FONT_SIZE = 20;
 const GAME_BOARD_WIDTH = 20;
 const GAME_BOARD_HEIGHT = 20;
 globalThis.GAME_BOARD_WIDTH = GAME_BOARD_WIDTH;
@@ -321,7 +322,7 @@ function buildGameSummaryText(statusText, score) {
 }
 
 function getBlockTextFont(weight = 'normal') {
-    return `${weight} 14px Georgia, "Times New Roman", serif`;
+    return `${weight} ${FONT_SIZE}px Georgia, "Times New Roman", serif`;
 }
 
 function drawWordText(ctx, word, centerX, centerY, spacing = 1) {
