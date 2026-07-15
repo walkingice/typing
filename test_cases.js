@@ -7,6 +7,7 @@ const {
     loadPredefinedWordLists,
     getWordLists, 
     setActiveButtonGroup,
+    buildGameSummaryText,
     refreshGameInterval,
     focusGameInput,
     saveScore, 
@@ -224,13 +225,33 @@ describe('Validation and Game End mock', () => {
     it('should trigger game over and record random score', () => {
         localStorage.clear();
         state.playerName = 'TestPlayer';
-        triggerGameOver();
+        const originalDocument = global.document;
+        let summaryHtml = '';
+        try {
+            global.document = {
+                getElementById(id) {
+                    if (id === 'gameSummary') {
+                        return {
+                            set innerHTML(value) {
+                                summaryHtml = value;
+                            }
+                        };
+                    }
+                    return null;
+                }
+            };
+            triggerGameOver();
 
-        assert(state.score >= 0 && state.score <= 150, 'Score should be between 0 and 150');
-        const rankData = JSON.parse(localStorage.getItem('ranking'));
-        assertEqual(rankData.length, 1);
-        assertEqual(rankData[0].name, 'TestPlayer');
-        assertEqual(rankData[0].score, state.score);
+            assert(state.score >= 0 && state.score <= 150, 'Score should be between 0 and 150');
+            const rankData = JSON.parse(localStorage.getItem('ranking'));
+            assertEqual(rankData.length, 1);
+            assertEqual(rankData[0].name, 'TestPlayer');
+            assertEqual(rankData[0].score, state.score);
+            assert(summaryHtml.includes('summary-status'));
+            assert(summaryHtml.includes('summary-score'));
+        } finally {
+            global.document = originalDocument;
+        }
     });
 
     it('should stop the game immediately without changing scene', () => {
@@ -238,7 +259,7 @@ describe('Validation and Game End mock', () => {
         const originalDocument = global.document;
         try {
             localStorage.clear();
-            let statusText = '';
+            let summaryHtml = '';
             state.currentScene = 'game';
             state.isGameOver = false;
             state.score = 42;
@@ -250,10 +271,10 @@ describe('Validation and Game End mock', () => {
             };
             global.document = {
                 getElementById(id) {
-                    if (id === 'gameStatus') {
+                    if (id === 'gameSummary') {
                         return {
-                            set textContent(value) {
-                                statusText = value;
+                            set innerHTML(value) {
+                                summaryHtml = value;
                             }
                         };
                     }
@@ -269,7 +290,8 @@ describe('Validation and Game End mock', () => {
             assertEqual(rankData.length, 1);
             assertEqual(rankData[0].name, 'Stopper');
             assertEqual(rankData[0].score, 42);
-            assertEqual(statusText, '遊戲結束！得分：42');
+            assert(summaryHtml.includes('遊戲結束！'));
+            assert(summaryHtml.includes('得分: 42'));
         } finally {
             global.clearInterval = originalClearInterval;
             global.document = originalDocument;
@@ -278,6 +300,11 @@ describe('Validation and Game End mock', () => {
 });
 
 describe('Difficulty Button State', () => {
+    it('should build a compact game summary text', () => {
+        const summary = buildGameSummaryText('遊戲進行中...', 18);
+        assertEqual(summary, '狀態：遊戲進行中... | 得分：18');
+    });
+
     it('should toggle active state on the selected difficulty button', () => {
         const buttons = [
             {

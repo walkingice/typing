@@ -295,13 +295,7 @@ function triggerGameOver() {
     const randomScore = Math.floor(Math.random() * 151);
     state.score = randomScore;
     saveScore(state.playerName, randomScore);
-    
-    if (typeof document !== 'undefined') {
-        const gameStatus = document.getElementById('gameStatus');
-        if (gameStatus) {
-            gameStatus.textContent = `遊戲結束！玩家：${state.playerName}，得分：${randomScore}`;
-        }
-    }
+    updateGameSummary(`遊戲結束！玩家：${state.playerName}`, randomScore);
 }
 
 function handleNameInput(nameInput, startBtn) {
@@ -315,6 +309,21 @@ function getDifficultyConfig(diff) {
     if (diff === 'easy') return { interval: 1000, multiplier: 1 };
     if (diff === 'hard') return { interval: 500, multiplier: 10 };
     return { interval: 800, multiplier: 5 };
+}
+
+function buildGameSummaryText(statusText, score) {
+    return `狀態：${statusText} | 得分：${score}`;
+}
+
+function updateGameSummary(statusText, score) {
+    if (typeof document === 'undefined') return;
+    const summaryEl = document.getElementById('gameSummary');
+    if (!summaryEl) return;
+    summaryEl.innerHTML = `
+        <span class="summary-status">${escapeHtml(statusText)}</span>
+        <span class="summary-divider">|</span>
+        <span class="summary-score">得分: ${score}</span>
+    `;
 }
 
 function refreshGameInterval() {
@@ -421,10 +430,7 @@ function startGame() {
     state.isGameOver = false;
     const diffConfig = getDifficultyConfig(state.difficulty);
     if (typeof document !== 'undefined') {
-        const scoreEl = document.getElementById('gameScore');
-        if (scoreEl) scoreEl.textContent = `得分: 0`;
-        const statusEl = document.getElementById('gameStatus');
-        if (statusEl) statusEl.textContent = `遊戲進行中...`;
+        updateGameSummary('遊戲進行中...', 0);
         const inputEl = document.getElementById('gameTextInput');
         if (inputEl) {
             inputEl.value = '';
@@ -443,10 +449,7 @@ function endGame() {
     }
     state.isGameOver = true;
     saveScore(state.playerName, state.score);
-    if (typeof document !== 'undefined') {
-        const statusEl = document.getElementById('gameStatus');
-        if (statusEl) statusEl.textContent = `遊戲結束！得分：${state.score}`;
-    }
+    updateGameSummary('遊戲結束！', state.score);
     drawGame();
 }
 
@@ -575,10 +578,7 @@ function matchTyping(inputVal) {
     addEliminationAnimation(target);
     const diffConfig = getDifficultyConfig(state.difficulty);
     state.score += diffConfig.multiplier * target.width;
-    if (typeof document !== 'undefined') {
-        const scoreEl = document.getElementById('gameScore');
-        if (scoreEl) scoreEl.textContent = `得分: ${state.score}`;
-    }
+    updateGameSummary('遊戲進行中...', state.score);
     drawGame();
     return true;
 }
@@ -747,6 +747,7 @@ if (typeof module !== 'undefined' && module.exports) {
         loadPredefinedWordLists,
         getWordLists,
         setActiveButtonGroup,
+        buildGameSummaryText,
         refreshGameInterval,
         focusGameInput,
         saveScore,
