@@ -378,7 +378,7 @@ function moveBlocksDown() {
     for (const block of state.fallingBlocks) {
         if (checkBlockOverlap(block, 1, state.board)) {
             for (let i = 0; i < block.width; i++) {
-                state.board[block.y][block.x + i] = ' ';
+                state.board[block.y][block.x + i] = block;
             }
             toRemove.push(block);
             if (block.y <= 0) state.isGameOver = true;
@@ -447,6 +447,7 @@ function endGame() {
         const statusEl = document.getElementById('gameStatus');
         if (statusEl) statusEl.textContent = `遊戲結束！得分：${state.score}`;
     }
+    drawGame();
 }
 
 function stopGameImmediately() {
@@ -502,20 +503,27 @@ function drawGame() {
     ctx.fillStyle = '#7f8c8d';
     for (let r = 0; r < 20; r++) {
         for (let c = 0; c < 20; c++) {
-            if (state.board[r][c] !== null) {
-                ctx.fillRect(c * cellW + 1, r * cellH + 1, cellW - 2, cellH - 2);
-                ctx.fillStyle = '#ffffff';
-                ctx.font = '12px Arial';
-                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-                ctx.fillText(state.board[r][c], c * cellW + cellW / 2, r * cellH + cellH / 2);
-                ctx.fillStyle = '#7f8c8d';
-            }
+            const block = state.board[r][c];
+            if (block === null) continue;
+            if (c > 0 && state.board[r][c - 1] === block) continue;
+            ctx.fillRect(c * cellW + 1, r * cellH + 1, block.width * cellW - 2, cellH - 2);
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(block.word, c * cellW + (block.width * cellW) / 2, r * cellH + cellH / 2);
+            ctx.fillStyle = '#7f8c8d';
         }
     }
-    state.fallingBlocks.forEach(block => drawBlock(ctx, block, cellW, cellH, '#3498db', 1));
+    const fallingBlockColor = getFallingBlockColor();
+    state.fallingBlocks.forEach(block => drawBlock(ctx, block, cellW, cellH, fallingBlockColor, 1));
     drawEliminatingBlocks(ctx, cellW, cellH);
     pruneEliminationAnimations();
     if (state.eliminatingBlocks.length > 0) requestEliminationRedraw();
+}
+
+function getFallingBlockColor() {
+    return state.isGameOver ? '#7f8c8d' : '#3498db';
 }
 
 function drawBlock(ctx, block, cellW, cellH, color, alpha) {
@@ -762,6 +770,7 @@ if (typeof module !== 'undefined' && module.exports) {
         startGame,
         endGame,
         stopGameImmediately,
+        getFallingBlockColor,
         addEliminationAnimation,
         pruneEliminationAnimations,
         matchTyping

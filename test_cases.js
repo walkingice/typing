@@ -27,6 +27,7 @@ const {
     startGame,
     endGame,
     stopGameImmediately,
+    getFallingBlockColor,
     addEliminationAnimation,
     pruneEliminationAnimations,
     matchTyping
@@ -542,7 +543,7 @@ describe('Phase 5 Game Mechanics', () => {
 
         moveBlocksDown();
         assertEqual(state.fallingBlocks.length, 0);
-        assertEqual(state.board[19][5], ' ');
+        assertEqual(state.board[19][5].word, 'a');
 
         state.fallingBlocks = [
             { word: 'b', x: 5, y: 17, width: 1 }
@@ -552,7 +553,7 @@ describe('Phase 5 Game Mechanics', () => {
         
         moveBlocksDown();
         assertEqual(state.fallingBlocks.length, 0);
-        assertEqual(state.board[18][5], ' ');
+        assertEqual(state.board[18][5].word, 'b');
     });
 
     it('should trigger game over when a block lands at the top (y <= 0)', () => {
@@ -565,7 +566,73 @@ describe('Phase 5 Game Mechanics', () => {
 
         moveBlocksDown();
         assert(state.isGameOver);
-        assertEqual(state.board[0][5], ' ');
+        assertEqual(state.board[0][5].word, 'a');
+    });
+
+    it('should use grey falling blocks after game over', () => {
+        state.isGameOver = false;
+        assertEqual(getFallingBlockColor(), '#3498db');
+
+        state.isGameOver = true;
+        assertEqual(getFallingBlockColor(), '#7f8c8d');
+    });
+
+    it('should redraw falling blocks in grey when the game ends', () => {
+        const originalDocument = global.document;
+        try {
+            const fillStyles = [];
+            state.board = initBoard();
+            state.fallingBlocks = [
+                { word: 'a', x: 1, y: 1, width: 1 }
+            ];
+            state.gameIntervalId = null;
+            state.playerName = 'Renderer';
+            state.score = 0;
+            state.isGameOver = false;
+
+            global.document = {
+                getElementById(id) {
+                    if (id === 'gameStatus') {
+                        return { textContent: '' };
+                    }
+                    if (id === 'gameCanvas') {
+                        return {
+                            width: 200,
+                            height: 200,
+                            getContext() {
+                                return {
+                                    clearRect() {},
+                                    beginPath() {},
+                                    moveTo() {},
+                                    lineTo() {},
+                                    stroke() {},
+                                    fillRect() {},
+                                    fillText() {},
+                                    save() {},
+                                    restore() {},
+                                    set fillStyle(value) {
+                                        fillStyles.push(value);
+                                    },
+                                    set strokeStyle(value) {},
+                                    set lineWidth(value) {},
+                                    set font(value) {},
+                                    set textAlign(value) {},
+                                    set textBaseline(value) {},
+                                    set globalAlpha(value) {}
+                                };
+                            }
+                        };
+                    }
+                    return null;
+                }
+            };
+
+            endGame();
+
+            assert(fillStyles.includes('#7f8c8d'), 'Game over redraw should use grey');
+        } finally {
+            global.document = originalDocument;
+        }
     });
 });
 
