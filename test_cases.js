@@ -26,6 +26,7 @@ const {
     gameTick,
     startGame,
     endGame,
+    stopGameImmediately,
     addEliminationAnimation,
     pruneEliminationAnimations,
     matchTyping
@@ -229,6 +230,49 @@ describe('Validation and Game End mock', () => {
         assertEqual(rankData.length, 1);
         assertEqual(rankData[0].name, 'TestPlayer');
         assertEqual(rankData[0].score, state.score);
+    });
+
+    it('should stop the game immediately without changing scene', () => {
+        const originalClearInterval = global.clearInterval;
+        const originalDocument = global.document;
+        try {
+            localStorage.clear();
+            let statusText = '';
+            state.currentScene = 'game';
+            state.isGameOver = false;
+            state.score = 42;
+            state.playerName = 'Stopper';
+            state.gameIntervalId = { id: 7 };
+
+            global.clearInterval = id => {
+                assertEqual(id.id, 7);
+            };
+            global.document = {
+                getElementById(id) {
+                    if (id === 'gameStatus') {
+                        return {
+                            set textContent(value) {
+                                statusText = value;
+                            }
+                        };
+                    }
+                    return null;
+                }
+            };
+
+            stopGameImmediately();
+
+            assertEqual(state.isGameOver, true);
+            assertEqual(state.gameIntervalId, null);
+            const rankData = JSON.parse(localStorage.getItem('ranking'));
+            assertEqual(rankData.length, 1);
+            assertEqual(rankData[0].name, 'Stopper');
+            assertEqual(rankData[0].score, 42);
+            assertEqual(statusText, '遊戲結束！得分：42');
+        } finally {
+            global.clearInterval = originalClearInterval;
+            global.document = originalDocument;
+        }
     });
 });
 

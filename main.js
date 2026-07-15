@@ -449,6 +449,11 @@ function endGame() {
     }
 }
 
+function stopGameImmediately() {
+    if (state.currentScene !== 'game' || state.isGameOver) return;
+    endGame();
+}
+
 function getEliminationProgress(animation, now) {
     return Math.min((now - animation.startedAt) / animation.duration, 1);
 }
@@ -674,6 +679,10 @@ function bindGameControls() {
         startGame();
     });
 
+    document.getElementById('stopGameBtn')?.addEventListener('click', () => {
+        stopGameImmediately();
+    });
+
     document.getElementById('backFromGameBtn')?.addEventListener('click', () => {
         switchScene('intro');
     });
@@ -752,6 +761,7 @@ if (typeof module !== 'undefined' && module.exports) {
         gameTick,
         startGame,
         endGame,
+        stopGameImmediately,
         addEliminationAnimation,
         pruneEliminationAnimations,
         matchTyping
