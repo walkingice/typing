@@ -486,8 +486,8 @@ describe('Phase 5 Game Mechanics', () => {
 
     it('should initialize empty board correctly', () => {
         const board = initBoard();
-        assertEqual(board.length, 20);
-        assertEqual(board[0].length, 20);
+        assertEqual(board.length, GAME_BOARD_HEIGHT);
+        assertEqual(board[0].length, GAME_BOARD_WIDTH);
         assert(isBoardEmpty(board));
     });
 
@@ -500,7 +500,7 @@ describe('Phase 5 Game Mechanics', () => {
         const block = state.fallingBlocks[0];
         assertEqual(block.word, 'testword');
         assertEqual(block.width, 4); // capped at 4
-        assert(block.x >= 0 && block.x <= 16);
+        assert(block.x >= 0 && block.x <= GAME_BOARD_WIDTH - block.width);
     });
 
     it('should prioritize matching the lowest block when duplicate words exist', () => {
@@ -637,7 +637,7 @@ describe('Phase 5 Game Mechanics', () => {
             }
         };
 
-        drawBlock(ctx, { word: 'cat', x: 2, y: 3, width: 3 }, 20, 20, '#3498db', 1);
+        drawBlock(ctx, { word: 'cat', x: 2, y: 3, width: 3 }, GAME_BOARD_WIDTH, GAME_BOARD_HEIGHT, '#3498db', 1);
 
         assert(calls.some(call => call.type === 'font' && call.value === getBlockTextFont()));
         const textCalls = calls.filter(call => call.type === 'fillText');

@@ -5,6 +5,10 @@ const DEFAULT_WORD_LIST = {
     words: Array.from({ length: 26 }, (_, i) => String.fromCharCode(97 + i))
 };
 
+const GAME_BOARD_WIDTH = 20;
+const GAME_BOARD_HEIGHT = 20;
+globalThis.GAME_BOARD_WIDTH = GAME_BOARD_WIDTH;
+globalThis.GAME_BOARD_HEIGHT = GAME_BOARD_HEIGHT;
 const GAME_CANVAS_SIZE = 600;
 const PREDEFINED_WORD_LIST_FILES = ['list01.txt', 'list02.txt'];
 const ELIMINATION_ANIMATION_MS = 260;
@@ -364,8 +368,8 @@ function focusGameInput() {
 
 function initBoard() {
     const board = [];
-    for (let r = 0; r < 20; r++) {
-        board.push(new Array(20).fill(null));
+    for (let r = 0; r < GAME_BOARD_HEIGHT; r++) {
+        board.push(new Array(GAME_BOARD_WIDTH).fill(null));
     }
     return board;
 }
@@ -376,10 +380,10 @@ function isBoardEmpty(board) {
 
 function checkBlockOverlap(block, yOffset, board) {
     const checkY = block.y + yOffset;
-    if (checkY >= 20) return true;
+    if (checkY >= GAME_BOARD_HEIGHT) return true;
     for (let i = 0; i < block.width; i++) {
         const checkX = block.x + i;
-        if (checkX < 0 || checkX >= 20) return true;
+        if (checkX < 0 || checkX >= GAME_BOARD_WIDTH) return true;
         if (board[checkY][checkX] !== null) return true;
     }
     return false;
@@ -392,7 +396,7 @@ function spawnBlock() {
     if (available.length === 0) available = wordList;
     const word = available[Math.floor(Math.random() * available.length)];
     const width = Math.max(1, Math.min(word.length, 4));
-    const x = Math.floor(Math.random() * (20 - width + 1));
+    const x = Math.floor(Math.random() * (GAME_BOARD_WIDTH - width + 1));
     const block = { word, x, y: 0, width };
     if (checkBlockOverlap(block, 0, state.board)) {
         state.isGameOver = true;
@@ -515,17 +519,17 @@ function drawGame() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const cw = canvas.width, ch = canvas.height;
-    const cellW = cw / 20, cellH = ch / 20;
+    const cellW = cw / GAME_BOARD_WIDTH, cellH = ch / GAME_BOARD_HEIGHT;
     ctx.clearRect(0, 0, cw, ch);
     ctx.strokeStyle = '#e2e8f0';
     ctx.lineWidth = 0.5;
-    for (let i = 0; i <= 20; i++) {
+    for (let i = 0; i <= GAME_BOARD_WIDTH; i++) {
         ctx.beginPath(); ctx.moveTo(i * cellW, 0); ctx.lineTo(i * cellW, ch); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(0, i * cellH); ctx.lineTo(cw, i * cellH); ctx.stroke();
     }
     ctx.fillStyle = '#7f8c8d';
-    for (let r = 0; r < 20; r++) {
-        for (let c = 0; c < 20; c++) {
+    for (let r = 0; r < GAME_BOARD_HEIGHT; r++) {
+        for (let c = 0; c < GAME_BOARD_WIDTH; c++) {
             const block = state.board[r][c];
             if (block === null) continue;
             if (c > 0 && state.board[r][c - 1] === block) continue;
