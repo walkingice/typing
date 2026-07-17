@@ -260,7 +260,7 @@ butterfly
 button
 buy
 by
-bye)
+bye
 cabbage
 cable
 cafeteria
@@ -446,7 +446,7 @@ custom
 customer
 cut
 cute
-daddy)
+daddy
 daily
 damage
 dance
@@ -1187,7 +1187,7 @@ mix
 model
 modern
 moment
-mommy)
+mommy
 Monday
 money
 monkey
