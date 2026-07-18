@@ -637,14 +637,14 @@ function showCompletionDialog(doc, result = null) {
 }
 
 function flashErrorBackground(doc) {
-    const body = doc.body || doc.documentElement;
-    if (!body || !body.classList) {
+    const mainArea = doc.getElementById('mainArea');
+    if (!mainArea || !mainArea.classList) {
         return false;
     }
 
-    body.classList.add('is-error-flash');
+    mainArea.classList.add('is-error-flash');
     if (typeof setTimeout === 'function') {
-        setTimeout(() => body.classList.remove('is-error-flash'), 120);
+        setTimeout(() => mainArea.classList.remove('is-error-flash'), 120);
     }
     return true;
 }
@@ -673,11 +673,13 @@ function handleTypingInput(doc, key, nowFn = () => Date.now()) {
         scheduleTimerLoop(doc);
     }
 
+    const expectedCharacter = expectedText[session.input.length];
+    const isIncorrectInput = key !== expectedCharacter;
     session.input += key;
     renderCurrentPracticeText(doc);
     updateTimerDisplay(doc, nowFn);
 
-    if (!expectedText.startsWith(session.input)) {
+    if (isIncorrectInput) {
         flashErrorBackground(doc);
     }
 
@@ -849,6 +851,7 @@ if (typeof module !== 'undefined' && module.exports) {
         updateHighScoreDisplay,
         renderCurrentPracticeText,
         handleTypingInput,
+        flashErrorBackground,
         showCompletionDialog,
         createMainSection,
         createKeyboardSection,

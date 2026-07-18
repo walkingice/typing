@@ -27,6 +27,7 @@ const {
     updateTimerDisplay,
     getHighScoreStorageKey,
     handleTypingInput,
+    flashErrorBackground,
     renderApp
 } = require('./main.js');
 
@@ -531,6 +532,29 @@ describe('Phase 4 core logic', () => {
 
         handleTypingInput(doc, 'x', () => 1400);
         assertEqual(doc.getElementById('mainArea').children[0].children[2].children[2].classList.contains('is-incorrect'), true);
+    });
+
+    it('should flash the main area after incorrect input', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+
+        handleTypingInput(doc, 'x', () => 1000);
+
+        assertEqual(doc.getElementById('mainArea').classList.contains('is-error-flash'), true);
+        assertEqual(doc.body.classList.contains('is-error-flash'), false);
+    });
+
+    it('should not flash when the current input is correct after an earlier error', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+
+        handleTypingInput(doc, 'x', () => 1000);
+        doc.getElementById('mainArea').classList.remove('is-error-flash');
+        handleTypingInput(doc, 'b', () => 1100);
+
+        assertEqual(doc.getElementById('mainArea').classList.contains('is-error-flash'), false);
     });
 
     it('should support Backspace and complete the session on exact match', () => {
