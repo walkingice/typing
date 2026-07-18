@@ -74,8 +74,8 @@
             min-height: 260px;
             display: flex;
             flex-direction: column;
-            align-items: stretch;
-            justify-content: center;
+            align-items: flex-start;
+            justify-content: flex-start;
             background: var(--panel-alt);
             color: var(--muted);
         }
@@ -193,8 +193,8 @@
 
         .keyboard-titlebar {
             appearance: none;
-            width: 100%;
-            margin: 0 0 12px;
+            width: auto;
+            margin: 0 0 8px;
             padding: 0;
             border: 0;
             background: transparent;
@@ -203,6 +203,10 @@
             font-weight: 700;
             text-align: left;
             cursor: pointer;
+        }
+
+        .keyboard-body {
+            width: 100%;
         }
 
         .keyboard-titlebar:focus-visible,

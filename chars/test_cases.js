@@ -273,6 +273,15 @@ describe('Phase 2 keyboard area', () => {
         assert(html.includes('flex: 0 0 clamp(260px, 42vh, 360px);'));
     });
 
+    it('should keep the keyboard toggle compact and align the body to the top', () => {
+        const html = fs.readFileSync('index.html', 'utf8');
+
+        assert(html.includes('align-items: flex-start;'));
+        assert(html.includes('justify-content: flex-start;'));
+        assert(html.includes('.keyboard-titlebar {\n            appearance: none;\n            width: auto;'));
+        assert(html.includes('.keyboard-body {\n            width: 100%;\n        }'));
+    });
+
     it('should create the keyboard layout rows', () => {
         const layout = createKeyboardLayout();
 
