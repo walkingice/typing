@@ -1,6 +1,7 @@
 // main.js - Typing Practice App Shell
 
 const PRACTICE_CHARS_PER_LINE = 14;
+const PRACTICE_CHARS_PER_GROUP = 7;
 
 const PRACTICE_TARGETS = [
     {
@@ -168,6 +169,10 @@ function getTypedCharacterState(expectedText, typedText) {
     }
 
     return state;
+}
+
+function isPracticeGroupEnd(index) {
+    return (index + 1) % PRACTICE_CHARS_PER_GROUP === 0;
 }
 
 function isPrintableKey(key) {
@@ -403,6 +408,10 @@ function createPracticeText(doc, target, typedText = '') {
             const span = doc.createElement('span');
             span.textContent = character;
             span.className = 'practice-char';
+
+            if (isPracticeGroupEnd(index)) {
+                span.classList.add('is-group-end');
+            }
 
             if (characterState[index] === 'correct') {
                 span.classList.add('is-correct');
@@ -831,6 +840,7 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         getAppName,
         PRACTICE_CHARS_PER_LINE,
+        PRACTICE_CHARS_PER_GROUP,
         createControlButtons,
         buildRepeatedAlphabet,
         buildFiveLetterTarget,
@@ -846,6 +856,7 @@ if (typeof module !== 'undefined' && module.exports) {
         getHighScoreStorageKey,
         getHighScoreForTarget,
         getTypedCharacterState,
+        isPracticeGroupEnd,
         updateKeyboardHighlight,
         updateKeyboardPressedKey,
         updateTimerDisplay,

@@ -2,6 +2,7 @@ const { describe, it, assert, assertEqual, getSummary } = require('./test_lib.js
 const {
     getAppName,
     PRACTICE_CHARS_PER_LINE,
+    PRACTICE_CHARS_PER_GROUP,
     createControlButtons,
     buildRepeatedAlphabet,
     buildFiveLetterTarget,
@@ -15,6 +16,7 @@ const {
     resetSessionState,
     formatElapsedTime,
     getTypedCharacterState,
+    isPracticeGroupEnd,
     updateKeyboardHighlight,
     updateKeyboardPressedKey,
     createMainSection,
@@ -246,6 +248,20 @@ describe('Phase 1 UI shell', () => {
         assertEqual(main.children[0].children[0].children[0].className, 'practice-target-line');
         const lastLine = main.children[0].children[0].children.at(-1);
         assertEqual(lastLine.children.length, buildRepeatedAlphabet(2).length % PRACTICE_CHARS_PER_LINE);
+    });
+
+    it('should add visual spacing after every seven practice characters', () => {
+        assertEqual(PRACTICE_CHARS_PER_GROUP, 7);
+        assertEqual(isPracticeGroupEnd(6), true);
+        assertEqual(isPracticeGroupEnd(7), false);
+        assertEqual(isPracticeGroupEnd(13), true);
+
+        const doc = createMockDocument();
+        const main = createMainSection(doc);
+        const firstLine = main.children[0].children[0].children[0];
+
+        assertEqual(firstLine.children[6].classList.contains('is-group-end'), true);
+        assertEqual(firstLine.children[7].classList.contains('is-group-end'), false);
     });
 
     it('should render the app shell into the root element', () => {
