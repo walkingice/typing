@@ -6,6 +6,7 @@ function getAppName() {
 
 function createControlButtons() {
     return [
+        { id: 'toggleKeyboardButton', label: 'Keyboard: On' },
         { id: 'clearRecordsButton', label: 'Clear Records' },
         { id: 'restartButton', label: 'Restart' }
     ];
@@ -36,6 +37,32 @@ function createButton(doc, id, label, variant) {
     return button;
 }
 
+function createKeyboardLayout() {
+    return [
+        ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
+        ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
+        ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+    ];
+}
+
+function createKeyboardKey(doc, keyLabel) {
+    const key = doc.createElement('div');
+    key.className = 'keyboard-key';
+    key.textContent = keyLabel;
+    return key;
+}
+
+function createKeyboardRow(doc, keys) {
+    const row = doc.createElement('div');
+    row.className = 'keyboard-row';
+
+    keys.forEach((keyLabel) => {
+        row.appendChild(createKeyboardKey(doc, keyLabel));
+    });
+
+    return row;
+}
+
 function createTopSection(doc) {
     const section = createSection(doc, 'panel panel-top', 'topArea');
     const title = doc.createElement('h1');
@@ -60,8 +87,44 @@ function createMainSection(doc) {
 }
 
 function createKeyboardSection(doc) {
-    const section = createSection(doc, 'panel panel-bottom', 'keyboardArea', 'Keyboard area');
+    const section = createSection(doc, 'panel panel-bottom', 'keyboardArea');
+    const title = doc.createElement('p');
+    title.className = 'keyboard-title';
+    title.textContent = 'Keyboard area';
+
+    const keyboard = doc.createElement('div');
+    keyboard.className = 'keyboard-layout';
+
+    createKeyboardLayout().forEach((keys) => {
+        keyboard.appendChild(createKeyboardRow(doc, keys));
+    });
+
+    section.appendChild(title);
+    section.appendChild(keyboard);
     return section;
+}
+
+function isKeyboardVisible(doc = document) {
+    const keyboard = doc.getElementById('keyboardArea');
+    return keyboard ? !keyboard.classList.contains('is-hidden') : false;
+}
+
+function setKeyboardVisibility(doc, visible) {
+    const keyboard = doc.getElementById('keyboardArea');
+    const button = doc.getElementById('toggleKeyboardButton');
+
+    if (!keyboard || !button) {
+        return false;
+    }
+
+    keyboard.classList.toggle('is-hidden', !visible);
+    button.textContent = visible ? 'Keyboard: On' : 'Keyboard: Off';
+    button.setAttribute('aria-pressed', String(visible));
+    return true;
+}
+
+function toggleKeyboardVisibility(doc = document) {
+    return setKeyboardVisibility(doc, !isKeyboardVisible(doc));
 }
 
 function createAppShell(doc = document) {
@@ -76,6 +139,18 @@ function createAppShell(doc = document) {
     return app;
 }
 
+function bindKeyboardToggle(doc) {
+    const button = doc.getElementById('toggleKeyboardButton');
+
+    if (!button) {
+        return;
+    }
+
+    button.addEventListener('click', () => {
+        toggleKeyboardVisibility(doc);
+    });
+}
+
 function renderApp(doc = document) {
     const root = doc.getElementById('app');
     if (!root) {
@@ -83,6 +158,8 @@ function renderApp(doc = document) {
     }
 
     root.replaceChildren(createAppShell(doc));
+    setKeyboardVisibility(doc, true);
+    bindKeyboardToggle(doc);
 }
 
 function boot() {
@@ -105,7 +182,12 @@ if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         getAppName,
         createControlButtons,
+        createKeyboardLayout,
+        createKeyboardSection,
         createAppShell,
+        isKeyboardVisible,
+        setKeyboardVisibility,
+        toggleKeyboardVisibility,
         renderApp
     };
 }
