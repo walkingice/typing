@@ -1,7 +1,7 @@
 // main.js - Typing Practice App Shell
 
-const PRACTICE_CHARS_PER_LINE = 14;
-const PRACTICE_CHARS_PER_GROUP = 7;
+const PRACTICE_CHARS_PER_LINE = 20;
+const PRACTICE_CHARS_PER_GROUP = 5;
 
 const PRACTICE_TARGETS = [
     {
