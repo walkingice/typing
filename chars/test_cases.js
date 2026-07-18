@@ -2,11 +2,18 @@ const { describe, it, assert, assertEqual, getSummary } = require('./test_lib.js
 const {
     getAppName,
     createControlButtons,
+    buildRepeatedAlphabet,
+    buildAlphabetWithSymbols,
+    buildSegmentedAlphabet,
+    getPracticeTargetById,
+    getSelectedPracticeTarget,
     createKeyboardLayout,
+    createMainSection,
     createKeyboardSection,
     createAppShell,
     isKeyboardVisible,
     setKeyboardVisibility,
+    renderPracticeTarget,
     toggleKeyboardVisibility,
     renderApp
 } = require('./main.js');
@@ -20,6 +27,7 @@ function createMockElement(tagName) {
         textContent: '',
         type: '',
         attributes: {},
+        listeners: {},
         children: [],
         classList: {
             add(...names) {
@@ -62,8 +70,19 @@ function createMockElement(tagName) {
             this.children.push(child);
             return child;
         },
+        replaceChildren(child) {
+            this.children = child ? [child] : [];
+        },
         setAttribute(name, value) {
             this.attributes[name] = String(value);
+        },
+        addEventListener(type, handler) {
+            this.listeners[type] = handler;
+        },
+        click() {
+            if (this.listeners.click) {
+                this.listeners.click();
+            }
         },
         get id() {
             return this._id;
@@ -121,7 +140,11 @@ function registerAppTree(doc, node) {
 }
 
 function getKeyboardToggleButton(shell) {
-    return shell.children[0].children[1].children[0];
+    return shell.children[0].children[1].children[1].children[0];
+}
+
+function getPracticeTargetButtons(shell) {
+    return shell.children[0].children[1].children[0].children;
 }
 
 describe('Basic Infrastructure', () => {
@@ -142,6 +165,22 @@ describe('Phase 1 UI shell', () => {
         assertEqual(buttons[2].label, 'Restart');
     });
 
+    it('should build practice target text sets', () => {
+        assertEqual(buildRepeatedAlphabet(2), 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz');
+        assertEqual(buildAlphabetWithSymbols(1), 'abcdefghijklmnopqrstuvwxyz!@.-');
+        assertEqual(
+            buildSegmentedAlphabet(),
+            'abcdefgabcdefgabcdefghijklmnhijklmnhijklmnopqrstuopqrstuopqrstuvwxyzvwxyzvwxyz'
+        );
+    });
+
+    it('should expose the selected practice target', () => {
+        const target = getSelectedPracticeTarget();
+
+        assertEqual(target.id, 'lowercaseTwice');
+        assertEqual(target.text, buildRepeatedAlphabet(2));
+    });
+
     it('should create three main areas in the app shell', () => {
         const doc = createMockDocument();
         const shell = createAppShell(doc);
@@ -151,6 +190,16 @@ describe('Phase 1 UI shell', () => {
         assertEqual(shell.children[0].id, 'topArea');
         assertEqual(shell.children[1].id, 'mainArea');
         assertEqual(shell.children[2].id, 'keyboardArea');
+    });
+
+    it('should render the selected practice target in the main area', () => {
+        const doc = createMockDocument();
+        const main = createMainSection(doc);
+
+        assertEqual(main.id, 'mainArea');
+        assertEqual(main.children.length, 1);
+        assertEqual(main.children[0].children[0].textContent, 'a-z x2');
+        assertEqual(main.children[0].children[2].textContent, buildRepeatedAlphabet(2));
     });
 
     it('should render the app shell into the root element', () => {
@@ -204,6 +253,62 @@ describe('Phase 2 keyboard area', () => {
         assertEqual(keyboard.classList.contains('is-hidden'), false);
         assertEqual(button.textContent, 'Keyboard: On');
         assertEqual(button.attributes['aria-pressed'], 'true');
+    });
+});
+
+describe('Phase 3 control area', () => {
+    it('should render practice target buttons in the control area', () => {
+        const doc = createMockDocument();
+        const shell = createAppShell(doc);
+        const buttons = getPracticeTargetButtons(shell);
+
+        assertEqual(buttons.length, 3);
+        assertEqual(buttons[0].id, 'target-lowercaseTwice');
+        assertEqual(buttons[0].attributes['aria-pressed'], 'true');
+        assertEqual(buttons[1].attributes['aria-pressed'], 'false');
+    });
+
+    it('should update main content when selecting a practice target', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        const shell = doc.body.children[0];
+        registerAppTree(doc, shell);
+
+        const mainArea = doc.getElementById('mainArea');
+        const targetButtons = getPracticeTargetButtons(shell);
+
+        assertEqual(mainArea.children[0].children[0].textContent, 'a-z x2');
+
+        targetButtons[1].click();
+
+        assertEqual(mainArea.children[0].children[0].textContent, 'a-z + symbols x2');
+        assertEqual(targetButtons[0].attributes['aria-pressed'], 'false');
+        assertEqual(targetButtons[1].attributes['aria-pressed'], 'true');
+    });
+
+    it('should keep the selected target after restart', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        const shell = doc.body.children[0];
+        registerAppTree(doc, shell);
+
+        const targetButtons = getPracticeTargetButtons(shell);
+        targetButtons[2].click();
+        doc.getElementById('restartButton').click();
+
+        assertEqual(doc.getElementById('mainArea').children[0].children[0].textContent, '7-letter segments x3');
+    });
+
+    it('should clear stored high scores when requested', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        const shell = doc.body.children[0];
+        registerAppTree(doc, shell);
+
+        localStorage.setItem('typingPracticeHighScores', '1');
+        doc.getElementById('clearRecordsButton').click();
+
+        assertEqual(localStorage.getItem('typingPracticeHighScores'), null);
     });
 });
 
