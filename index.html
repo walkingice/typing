@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typing Games</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --background: #10141f;
+            --panel: #182033;
+            --border: #2a3550;
+            --text: #ecf2ff;
+            --muted: #a8b3cc;
+            --accent: #6ea8fe;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            min-height: 100%;
+            background: var(--background);
+            color: var(--text);
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .navigation {
+            width: 5vw;
+            min-height: 100vh;
+            display: flex;
+            flex: 0 0 5vw;
+            flex-direction: column;
+            gap: 8px;
+            padding: 12px 4px;
+            border-right: 1px solid var(--border);
+            background: var(--panel);
+        }
+
+        .tab {
+            width: 100%;
+            padding: 10px 2px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: transparent;
+            color: var(--muted);
+            font: inherit;
+            font-size: clamp(0.6rem, 1vw, 0.9rem);
+            cursor: pointer;
+        }
+
+        .tab:hover {
+            color: var(--text);
+        }
+
+        .tab.is-active {
+            border-color: var(--accent);
+            background: var(--accent);
+            color: #0e172b;
+        }
+
+        .tab:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .game-frame {
+            width: 95vw;
+            max-width: 95vw;
+            display: block;
+            flex: 1 1 auto;
+            height: 100vh;
+            min-height: 100vh;
+            border: 0;
+            overflow: hidden;
+        }
+
+        .game-frame[hidden] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <main class="app-shell">
+        <nav class="navigation" role="tablist" aria-orientation="vertical" aria-label="Typing games">
+            <button class="tab is-active" type="button" role="tab" id="words-tab"
+                aria-controls="words-game" aria-selected="true" data-game="words">
+                Words
+            </button>
+            <button class="tab" type="button" role="tab" id="chars-tab"
+                aria-controls="chars-game" aria-selected="false" data-game="chars">
+                Chars
+            </button>
+        </nav>
+
+        <iframe class="game-frame" id="words-game" src="words/index.html"
+            title="Words typing game" scrolling="no"></iframe>
+        <iframe class="game-frame" id="chars-game" src="chars/index.html"
+            title="Chars typing game" scrolling="no" hidden></iframe>
+    </main>
+
+    <script>
+        const tabs = document.querySelectorAll('.tab');
+        const frames = document.querySelectorAll('.game-frame');
+
+        function resizeFrame(frame) {
+            try {
+                const documentElement = frame.contentDocument.documentElement;
+                const body = frame.contentDocument.body;
+                const contentHeight = Math.max(
+                    documentElement.scrollHeight,
+                    body ? body.scrollHeight : 0
+                );
+
+                frame.style.height = `${Math.max(contentHeight, window.innerHeight)}px`;
+            } catch (error) {
+                frame.style.height = '100vh';
+            }
+        }
+
+        function observeFrame(frame) {
+            frame.addEventListener('load', () => {
+                resizeFrame(frame);
+
+                if (!frame.contentDocument || typeof ResizeObserver === 'undefined') {
+                    return;
+                }
+
+                const documentElement = frame.contentDocument.documentElement;
+                const body = frame.contentDocument.body;
+                const observer = new ResizeObserver(() => resizeFrame(frame));
+                observer.observe(documentElement);
+                if (body) {
+                    observer.observe(body);
+                }
+            });
+        }
+
+        function selectGame(game) {
+            tabs.forEach(tab => {
+                const isSelected = tab.dataset.game === game;
+                tab.classList.toggle('is-active', isSelected);
+                tab.setAttribute('aria-selected', String(isSelected));
+            });
+
+            frames.forEach(frame => {
+                frame.hidden = frame.id !== `${game}-game`;
+            });
+        }
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => selectGame(tab.dataset.game));
+        });
+
+        frames.forEach(observeFrame);
+    </script>
+</body>
+</html>
