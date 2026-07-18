@@ -15,6 +15,7 @@ const {
     formatElapsedTime,
     getTypedCharacterState,
     updateKeyboardHighlight,
+    updateKeyboardPressedKey,
     createMainSection,
     createKeyboardSection,
     createAppShell,
@@ -407,6 +408,36 @@ describe('Phase 3 control area', () => {
 });
 
 describe('Phase 4 core logic', () => {
+    it('should highlight a pressed keyboard key in green state', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+
+        const keyboard = doc.getElementById('keyboardBody').children[0];
+        const keyA = keyboard.children[1].children[0];
+        updateKeyboardPressedKey(doc, 'A', true);
+
+        assertEqual(keyA.classList.contains('is-pressed'), true);
+        assertEqual(keyA.classList.contains('is-current'), true);
+
+        updateKeyboardPressedKey(doc, 'A', false);
+        assertEqual(keyA.classList.contains('is-pressed'), false);
+        assertEqual(keyA.classList.contains('is-current'), true);
+    });
+
+    it('should bind pressed state to keydown and keyup events', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+
+        const keyA = doc.getElementById('keyboardBody').children[0].children[1].children[0];
+        doc.listeners.keydown({ key: 'a' });
+        assertEqual(keyA.classList.contains('is-pressed'), true);
+
+        doc.listeners.keyup({ key: 'a' });
+        assertEqual(keyA.classList.contains('is-pressed'), false);
+    });
+
     it('should highlight the next expected keyboard key', () => {
         const doc = createMockDocument();
         renderApp(doc);

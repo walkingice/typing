@@ -333,6 +333,25 @@ function updateKeyboardHighlight(doc, target = getSelectedPracticeTarget(), inpu
     return true;
 }
 
+function updateKeyboardPressedKey(doc, keyValue, isPressed) {
+    const keyboardBody = doc.getElementById('keyboardBody');
+    if (!keyboardBody || !keyboardBody.children[0]) {
+        return false;
+    }
+
+    const keyLabel = isPrintableKey(keyValue) ? keyValue.toLowerCase() : keyValue;
+    const keyboard = keyboardBody.children[0];
+    Array.from(keyboard.children).forEach((row) => {
+        Array.from(row.children).forEach((key) => {
+            const isPressedKey = key.getAttribute('data-key') === keyLabel;
+            if (isPressedKey) {
+                key.classList.toggle('is-pressed', isPressed);
+            }
+        });
+    });
+    return true;
+}
+
 function createTopSection(doc) {
     const section = createSection(doc, 'panel panel-top', 'topArea');
     const title = doc.createElement('h1');
@@ -675,7 +694,11 @@ function bindTypingInput(doc) {
     }
 
     doc.addEventListener('keydown', (event) => {
+        updateKeyboardPressedKey(doc, event.key, true);
         handleTypingInput(doc, event.key);
+    });
+    doc.addEventListener('keyup', (event) => {
+        updateKeyboardPressedKey(doc, event.key, false);
     });
     return true;
 }
@@ -821,6 +844,7 @@ if (typeof module !== 'undefined' && module.exports) {
         getHighScoreForTarget,
         getTypedCharacterState,
         updateKeyboardHighlight,
+        updateKeyboardPressedKey,
         updateTimerDisplay,
         updateHighScoreDisplay,
         renderCurrentPracticeText,
