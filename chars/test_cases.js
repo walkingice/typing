@@ -299,6 +299,18 @@ describe('Phase 2 keyboard area', () => {
         assertEqual(keyboard.children[1].children[0].children[1].children[0].attributes['data-key'], 'q');
     });
 
+    it('should underline the F and J home keys', () => {
+        const doc = createMockDocument();
+        const keyboard = createKeyboardSection(doc).children[1].children[0];
+        const letterRow = keyboard.children[2];
+
+        assertEqual(letterRow.children[3].attributes['data-key'], 'f');
+        assertEqual(letterRow.children[3].classList.contains('is-home-key'), true);
+        assertEqual(letterRow.children[6].attributes['data-key'], 'j');
+        assertEqual(letterRow.children[6].classList.contains('is-home-key'), true);
+        assertEqual(letterRow.children[0].classList.contains('is-home-key'), false);
+    });
+
     it('should toggle keyboard visibility state', () => {
         const doc = createMockDocument();
         const shell = createAppShell(doc);

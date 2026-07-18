@@ -299,6 +299,9 @@ function createKeyboardKey(doc, definition) {
 
     const key = doc.createElement('div');
     key.className = 'keyboard-key';
+    if (['f', 'j'].includes(definition.key)) {
+        key.classList.add('is-home-key');
+    }
     key.textContent = definition.key;
     key.setAttribute('data-key', definition.key);
     key.setAttribute('aria-label', `Key ${definition.key}`);
