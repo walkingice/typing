@@ -3,19 +3,19 @@
 const PRACTICE_TARGETS = [
     {
         id: 'lowercaseTwice',
-        label: 'a-z x2',
+        label: '字母',
         description: 'Lowercase letters a-z, repeated twice.',
         text: buildRepeatedAlphabet(2)
     },
     {
         id: 'symbolsTwice',
-        label: 'a-z + symbols x2',
+        label: '字母符號',
         description: 'Lowercase letters a-z and common half-width symbols (!),@.-, repeated twice.',
         text: buildAlphabetWithSymbols(2)
     },
     {
         id: 'alphabetSegments',
-        label: '7-letter segments x3',
+        label: '字母反覆',
         description: 'Lowercase letters a-z, split into segments of 7 letters. Each segment repeats 3 times before moving to the next.',
         text: buildSegmentedAlphabet()
     }
@@ -30,8 +30,6 @@ function getAppName() {
 
 function createControlButtons() {
     return [
-        { id: 'toggleKeyboardButton', label: 'Keyboard: On' },
-        { id: 'clearRecordsButton', label: 'Clear Records' },
         { id: 'restartButton', label: 'Restart' }
     ];
 }
@@ -153,6 +151,27 @@ function createStatusLabel(doc, label, value, id) {
     return wrapper;
 }
 
+function createHighScoreButton(doc, value) {
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.id = 'highScoreButton';
+    button.className = 'status-item status-button';
+    button.setAttribute('aria-label', 'High Score');
+
+    const title = doc.createElement('span');
+    title.className = 'status-label';
+    title.textContent = 'High Score';
+
+    const content = doc.createElement('span');
+    content.className = 'status-value';
+    content.id = 'highScoreValue';
+    content.textContent = value;
+
+    button.appendChild(title);
+    button.appendChild(content);
+    return button;
+}
+
 function getPracticeTargetById(targetId) {
     return PRACTICE_TARGETS.find((target) => target.id === targetId) || PRACTICE_TARGETS[0];
 }
@@ -227,34 +246,30 @@ function createTopSection(doc) {
     const title = doc.createElement('h1');
     title.textContent = getAppName();
 
+    const controls = doc.createElement('div');
+    controls.className = 'control-row';
+
     const statusRow = doc.createElement('div');
     statusRow.className = 'status-row';
     statusRow.appendChild(createStatusLabel(doc, 'Stopwatch', '0.00s', 'stopwatchValue'));
-    statusRow.appendChild(createStatusLabel(doc, 'High Score', '--', 'highScoreValue'));
-
-    const targetRow = doc.createElement('div');
-    targetRow.className = 'control-row';
+    statusRow.appendChild(createHighScoreButton(doc, '--'));
 
     PRACTICE_TARGETS.forEach((target) => {
-        targetRow.appendChild(createTargetButton(doc, target));
+        controls.appendChild(createTargetButton(doc, target));
     });
-
-    const controls = doc.createElement('div');
-    controls.className = 'control-row';
 
     createControlButtons().forEach((item, index) => {
         const variant = index === 0 ? 'secondary' : '';
         controls.appendChild(createButton(doc, item.id, item.label, variant));
     });
 
-    const actionRow = doc.createElement('div');
-    actionRow.className = 'top-actions';
-    actionRow.appendChild(targetRow);
-    actionRow.appendChild(controls);
+    const bar = doc.createElement('div');
+    bar.className = 'control-bar';
+    bar.appendChild(title);
+    bar.appendChild(statusRow);
+    bar.appendChild(controls);
 
-    section.appendChild(title);
-    section.appendChild(statusRow);
-    section.appendChild(actionRow);
+    section.appendChild(bar);
     return section;
 }
 
@@ -305,9 +320,16 @@ function createMainSection(doc) {
 
 function createKeyboardSection(doc) {
     const section = createSection(doc, 'panel panel-bottom', 'keyboardArea');
-    const title = doc.createElement('p');
-    title.className = 'keyboard-title';
+    const title = doc.createElement('button');
+    title.type = 'button';
+    title.id = 'toggleKeyboardButton';
+    title.className = 'keyboard-titlebar';
     title.textContent = 'Keyboard area';
+    title.setAttribute('aria-pressed', 'true');
+
+    const body = doc.createElement('div');
+    body.id = 'keyboardBody';
+    body.className = 'keyboard-body';
 
     const keyboard = doc.createElement('div');
     keyboard.className = 'keyboard-layout';
@@ -316,26 +338,28 @@ function createKeyboardSection(doc) {
         keyboard.appendChild(createKeyboardRow(doc, keys));
     });
 
+    body.appendChild(keyboard);
     section.appendChild(title);
-    section.appendChild(keyboard);
+    section.appendChild(body);
     return section;
 }
 
 function isKeyboardVisible(doc = document) {
-    const keyboard = doc.getElementById('keyboardArea');
+    const keyboard = doc.getElementById('keyboardBody');
     return keyboard ? !keyboard.classList.contains('is-hidden') : false;
 }
 
 function setKeyboardVisibility(doc, visible) {
-    const keyboard = doc.getElementById('keyboardArea');
+    const section = doc.getElementById('keyboardArea');
+    const keyboard = doc.getElementById('keyboardBody');
     const button = doc.getElementById('toggleKeyboardButton');
 
-    if (!keyboard || !button) {
+    if (!section || !keyboard || !button) {
         return false;
     }
 
+    section.classList.toggle('is-collapsed', !visible);
     keyboard.classList.toggle('is-hidden', !visible);
-    button.textContent = visible ? 'Keyboard: On' : 'Keyboard: Off';
     button.setAttribute('aria-pressed', String(visible));
     return true;
 }
@@ -481,6 +505,41 @@ function bindKeyboardToggle(doc) {
     });
 }
 
+function confirmClearHighScore(doc) {
+    if (typeof localStorage !== 'undefined') {
+        localStorage.removeItem('typingPracticeHighScores');
+    }
+
+    return true;
+}
+
+function askToClearHighScore(doc) {
+    const confirmFn = typeof doc.confirm === 'function'
+        ? doc.confirm.bind(doc)
+        : (typeof confirm === 'function' ? confirm : null);
+
+    if (!confirmFn) {
+        return false;
+    }
+
+    if (!confirmFn('Clear high score records?')) {
+        return false;
+    }
+
+    return confirmClearHighScore(doc);
+}
+
+function bindHighScoreButton(doc) {
+    const button = doc.getElementById('highScoreButton');
+    if (!button) {
+        return;
+    }
+
+    button.addEventListener('click', () => {
+        askToClearHighScore(doc);
+    });
+}
+
 function bindPracticeTargetButtons(doc) {
     PRACTICE_TARGETS.forEach((target) => {
         const button = doc.getElementById(`target-${target.id}`);
@@ -491,19 +550,6 @@ function bindPracticeTargetButtons(doc) {
         button.addEventListener('click', () => {
             renderPracticeTarget(doc, target.id);
         });
-    });
-}
-
-function bindClearRecordsButton(doc) {
-    const button = doc.getElementById('clearRecordsButton');
-    if (!button) {
-        return;
-    }
-
-    button.addEventListener('click', () => {
-        if (typeof localStorage !== 'undefined') {
-            localStorage.removeItem('typingPracticeHighScores');
-        }
     });
 }
 
@@ -531,8 +577,8 @@ function renderApp(doc = document) {
     }
     setKeyboardVisibility(doc, true);
     bindKeyboardToggle(doc);
+    bindHighScoreButton(doc);
     bindPracticeTargetButtons(doc);
-    bindClearRecordsButton(doc);
     bindRestartButton(doc);
     bindTypingInput(doc);
     updateTimerDisplay(doc);
@@ -578,6 +624,8 @@ if (typeof module !== 'undefined' && module.exports) {
         isKeyboardVisible,
         setKeyboardVisibility,
         toggleKeyboardVisibility,
+        confirmClearHighScore,
+        askToClearHighScore,
         renderPracticeTarget,
         renderApp
     };

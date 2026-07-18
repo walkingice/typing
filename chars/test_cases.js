@@ -20,6 +20,7 @@ const {
     setKeyboardVisibility,
     renderPracticeTarget,
     toggleKeyboardVisibility,
+    askToClearHighScore,
     updateTimerDisplay,
     handleTypingInput,
     renderApp
@@ -44,6 +45,7 @@ function createMockElement(tagName) {
         attributes: {},
         listeners: {},
         children: [],
+        confirm: null,
         classList: {
             add(...names) {
                 names.forEach((name) => classSet.add(name));
@@ -159,11 +161,14 @@ function registerAppTree(doc, node) {
 }
 
 function getKeyboardToggleButton(shell) {
-    return shell.children[0].children[2].children[1].children[0];
+    return shell.children[2].children[0];
 }
 
 function getPracticeTargetButtons(shell) {
-    return shell.children[0].children[2].children[0].children;
+    return Array.from(shell.children[0].children[0].children[2].children).filter((button) => {
+        const id = button.id || '';
+        return id.startsWith('target-');
+    });
 }
 
 describe('Basic Infrastructure', () => {
@@ -175,13 +180,9 @@ describe('Basic Infrastructure', () => {
 describe('Phase 1 UI shell', () => {
     it('should expose the control buttons for the top area', () => {
         const buttons = createControlButtons();
-        assertEqual(buttons.length, 3);
-        assertEqual(buttons[0].id, 'toggleKeyboardButton');
-        assertEqual(buttons[0].label, 'Keyboard: On');
-        assertEqual(buttons[1].id, 'clearRecordsButton');
-        assertEqual(buttons[1].label, 'Clear Records');
-        assertEqual(buttons[2].id, 'restartButton');
-        assertEqual(buttons[2].label, 'Restart');
+        assertEqual(buttons.length, 1);
+        assertEqual(buttons[0].id, 'restartButton');
+        assertEqual(buttons[0].label, 'Restart');
     });
 
     it('should build practice target text sets', () => {
@@ -217,7 +218,7 @@ describe('Phase 1 UI shell', () => {
 
         assertEqual(main.id, 'mainArea');
         assertEqual(main.children.length, 1);
-        assertEqual(main.children[0].children[0].textContent, 'a-z x2');
+        assertEqual(main.children[0].children[0].textContent, '字母');
         assertEqual(main.children[0].children[2].children.length, buildRepeatedAlphabet(2).length);
         assertEqual(main.children[0].children[2].children[0].textContent, 'a');
     });
@@ -253,30 +254,35 @@ describe('Phase 2 keyboard area', () => {
         assertEqual(keyboard.id, 'keyboardArea');
         assertEqual(keyboard.children.length, 2);
         assertEqual(keyboard.children[0].textContent, 'Keyboard area');
-        assertEqual(keyboard.children[1].children.length, 3);
+        assertEqual(keyboard.children[1].id, 'keyboardBody');
+        assertEqual(keyboard.children[1].children.length, 1);
+        assertEqual(keyboard.children[1].children[0].children.length, 3);
     });
 
     it('should toggle keyboard visibility state', () => {
         const doc = createMockDocument();
         const shell = createAppShell(doc);
         const keyboard = shell.children[2];
+        const keyboardBody = keyboard.children[1];
         const button = getKeyboardToggleButton(shell);
         registerAppTree(doc, shell);
 
         assertEqual(isKeyboardVisible({
             getElementById(id) {
-                return id === 'keyboardArea' ? keyboard : null;
+                return id === 'keyboardBody' ? keyboardBody : null;
             }
         }), true);
 
         assertEqual(setKeyboardVisibility(doc, false), true);
-        assertEqual(keyboard.classList.contains('is-hidden'), true);
-        assertEqual(button.textContent, 'Keyboard: Off');
+        assertEqual(keyboard.classList.contains('is-collapsed'), true);
+        assertEqual(keyboardBody.classList.contains('is-hidden'), true);
+        assertEqual(button.textContent, 'Keyboard area');
         assertEqual(button.attributes['aria-pressed'], 'false');
 
         assertEqual(toggleKeyboardVisibility(doc), true);
-        assertEqual(keyboard.classList.contains('is-hidden'), false);
-        assertEqual(button.textContent, 'Keyboard: On');
+        assertEqual(keyboard.classList.contains('is-collapsed'), false);
+        assertEqual(keyboardBody.classList.contains('is-hidden'), false);
+        assertEqual(button.textContent, 'Keyboard area');
         assertEqual(button.attributes['aria-pressed'], 'true');
     });
 });
@@ -291,6 +297,9 @@ describe('Phase 3 control area', () => {
         assertEqual(buttons[0].id, 'target-lowercaseTwice');
         assertEqual(buttons[0].attributes['aria-pressed'], 'true');
         assertEqual(buttons[1].attributes['aria-pressed'], 'false');
+        assertEqual(buttons[0].textContent, '字母');
+        assertEqual(buttons[1].textContent, '字母符號');
+        assertEqual(buttons[2].textContent, '字母反覆');
     });
 
     it('should update main content when selecting a practice target', () => {
@@ -302,11 +311,11 @@ describe('Phase 3 control area', () => {
         const mainArea = doc.getElementById('mainArea');
         const targetButtons = getPracticeTargetButtons(shell);
 
-        assertEqual(mainArea.children[0].children[0].textContent, 'a-z x2');
+        assertEqual(mainArea.children[0].children[0].textContent, '字母');
 
         targetButtons[1].click();
 
-        assertEqual(doc.getElementById('mainArea').children[0].children[0].textContent, 'a-z + symbols x2');
+        assertEqual(doc.getElementById('mainArea').children[0].children[0].textContent, '字母符號');
         assertEqual(targetButtons[0].attributes['aria-pressed'], 'false');
         assertEqual(targetButtons[1].attributes['aria-pressed'], 'true');
     });
@@ -321,19 +330,33 @@ describe('Phase 3 control area', () => {
         targetButtons[2].click();
         doc.getElementById('restartButton').click();
 
-        assertEqual(doc.getElementById('mainArea').children[0].children[0].textContent, '7-letter segments x3');
+        assertEqual(doc.getElementById('mainArea').children[0].children[0].textContent, '字母反覆');
     });
 
-    it('should clear stored high scores when requested', () => {
+    it('should clear stored high scores after confirmation', () => {
         const doc = createMockDocument();
+        doc.confirm = () => true;
         renderApp(doc);
         const shell = doc.body.children[0];
         registerAppTree(doc, shell);
 
         localStorage.setItem('typingPracticeHighScores', '1');
-        doc.getElementById('clearRecordsButton').click();
+        doc.getElementById('highScoreButton').click();
 
         assertEqual(localStorage.getItem('typingPracticeHighScores'), null);
+    });
+
+    it('should keep stored high scores when confirmation is cancelled', () => {
+        const doc = createMockDocument();
+        doc.confirm = () => false;
+        renderApp(doc);
+        const shell = doc.body.children[0];
+        registerAppTree(doc, shell);
+
+        localStorage.setItem('typingPracticeHighScores', '1');
+        askToClearHighScore(doc);
+
+        assertEqual(localStorage.getItem('typingPracticeHighScores'), '1');
     });
 });
 

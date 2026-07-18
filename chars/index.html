@@ -80,7 +80,13 @@
             color: var(--muted);
         }
 
-        .panel-bottom.is-hidden {
+        .panel-bottom.is-collapsed {
+            flex: 0 0 auto;
+            min-height: 0;
+            padding-bottom: 12px;
+        }
+
+        .keyboard-body.is-hidden {
             display: none;
         }
 
@@ -90,28 +96,32 @@
             letter-spacing: 0.04em;
         }
 
-        .control-row {
+        .control-bar {
             display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            justify-content: flex-end;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: nowrap;
+            width: 100%;
         }
 
-        .top-actions {
+        .control-row {
             display: flex;
-            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: flex-end;
             align-items: center;
-            justify-content: space-between;
-            gap: 12px;
+            flex-wrap: wrap;
+            margin-left: auto;
         }
 
         .status-row {
             display: flex;
-            flex-wrap: wrap;
-            gap: 12px 18px;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: nowrap;
         }
 
-        .status-item {
+        .status-item,
+        .status-button {
             display: flex;
             align-items: baseline;
             gap: 8px;
@@ -119,6 +129,13 @@
             border: 1px solid var(--border);
             border-radius: 14px;
             background: rgba(255, 255, 255, 0.03);
+        }
+
+        .status-button {
+            appearance: none;
+            cursor: pointer;
+            font: inherit;
+            color: inherit;
         }
 
         .status-label {
@@ -152,10 +169,25 @@
             font-size: 0.95rem;
         }
 
-        .keyboard-title {
+        .keyboard-titlebar {
+            appearance: none;
+            width: 100%;
             margin: 0 0 12px;
+            padding: 0;
+            border: 0;
+            background: transparent;
             color: var(--text);
+            font: inherit;
             font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+        }
+
+        .keyboard-titlebar:focus-visible,
+        .status-button:focus-visible,
+        button:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
         }
 
         .keyboard-layout {
@@ -237,8 +269,17 @@
                 align-items: stretch;
             }
 
+            .control-bar {
+                flex-wrap: wrap;
+            }
+
+            .status-row {
+                flex-wrap: wrap;
+            }
+
             .control-row {
                 justify-content: flex-start;
+                margin-left: 0;
             }
         }
     </style>
