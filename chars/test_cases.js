@@ -1,3 +1,4 @@
+const fs = require('fs');
 const { describe, it, assert, assertEqual, getSummary } = require('./test_lib.js');
 const {
     getAppName,
@@ -267,6 +268,11 @@ describe('Phase 1 UI shell', () => {
 });
 
 describe('Phase 2 keyboard area', () => {
+    it('should reserve 42vh for the keyboard area', () => {
+        const html = fs.readFileSync('index.html', 'utf8');
+        assert(html.includes('flex: 0 0 clamp(260px, 42vh, 360px);'));
+    });
+
     it('should create the keyboard layout rows', () => {
         const layout = createKeyboardLayout();
 
