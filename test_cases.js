@@ -19,4 +19,7 @@ assert.match(html, /Math\.max\(contentHeight, window\.innerHeight\)/);
 assert.match(html, /new ResizeObserver/);
 assert.match(html, /function selectGame\(game\)/);
 
+const wordsHtml = fs.readFileSync('words/index.html', 'utf8');
+assert.match(wordsHtml, /body \{[\s\S]*box-sizing: border-box;[\s\S]*min-height: 100vh;/);
+
 console.log('Root integration tests passed.');
