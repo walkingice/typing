@@ -238,18 +238,18 @@ describe('Phase 1 UI shell', () => {
         assertEqual(lastLine.children.length, buildRepeatedAlphabet(2).length % PRACTICE_CHARS_PER_LINE);
     });
 
-    it('should add visual spacing after every seven practice characters', () => {
-        assertEqual(PRACTICE_CHARS_PER_GROUP, 7);
-        assertEqual(isPracticeGroupEnd(6), true);
-        assertEqual(isPracticeGroupEnd(7), false);
-        assertEqual(isPracticeGroupEnd(13), true);
+    it('should add visual spacing after every five practice characters', () => {
+        assertEqual(PRACTICE_CHARS_PER_GROUP, 5);
+        assertEqual(isPracticeGroupEnd(4), true);
+        assertEqual(isPracticeGroupEnd(5), false);
+        assertEqual(isPracticeGroupEnd(9), true);
 
         const doc = createMockDocument();
         const main = createMainSection(doc);
         const firstLine = main.children[0].children[0].children[0];
 
-        assertEqual(firstLine.children[6].classList.contains('is-group-end'), true);
-        assertEqual(firstLine.children[7].classList.contains('is-group-end'), false);
+        assertEqual(firstLine.children[4].classList.contains('is-group-end'), true);
+        assertEqual(firstLine.children[5].classList.contains('is-group-end'), false);
     });
 
     it('should render the app shell into the root element', () => {
