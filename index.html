@@ -134,6 +134,9 @@
         function observeFrame(frame) {
             frame.addEventListener('load', () => {
                 resizeFrame(frame);
+                if (!frame.hidden) {
+                    focusGameFrame(frame);
+                }
 
                 if (!frame.contentDocument || typeof ResizeObserver === 'undefined') {
                     return;
@@ -149,6 +152,23 @@
             });
         }
 
+        function focusGameFrame(frame) {
+            try {
+                if (!frame) {
+                    return;
+                }
+
+                const inputId = frame.id === 'chars-game'
+                    ? 'typingInput'
+                    : 'gameTextInput';
+                const input = frame.contentDocument?.getElementById(inputId);
+                frame.focus();
+                input?.focus();
+            } catch (error) {
+                // Ignore inaccessible or not-yet-loaded frames.
+            }
+        }
+
         function selectGame(game) {
             tabs.forEach(tab => {
                 const isSelected = tab.dataset.game === game;
@@ -159,6 +179,13 @@
             frames.forEach(frame => {
                 frame.hidden = frame.id !== `${game}-game`;
             });
+
+            const frame = document.getElementById(`${game}-game`);
+            setTimeout(() => {
+                if (!frame.hidden) {
+                    focusGameFrame(frame);
+                }
+            }, 0);
         }
 
         tabs.forEach(tab => {

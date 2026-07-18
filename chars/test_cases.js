@@ -27,6 +27,7 @@ const {
     toggleKeyboardVisibility,
     askToClearHighScore,
     updateTimerDisplay,
+    focusTypingInput,
     getHighScoreStorageKey,
     handleTypingInput,
     flashErrorBackground,
@@ -143,8 +144,13 @@ function createMockDocument() {
     return {
         body: root,
         listeners: {},
+        focusedElement: null,
         createElement(tagName) {
-            return createMockElement(tagName);
+            const element = createMockElement(tagName);
+            element.focus = () => {
+                this.focusedElement = element;
+            };
+            return element;
         },
         getElementById(id) {
             return elements[id] || null;
@@ -231,8 +237,10 @@ describe('Phase 1 UI shell', () => {
 
         assertEqual(main.id, 'mainArea');
         assertEqual(main.children.length, 1);
-        assertEqual(main.children[0].children.length, 1);
+        assertEqual(main.children[0].children.length, 2);
         assertEqual(main.children[0].children[0].className, 'practice-target-text');
+        assertEqual(main.children[0].children[1].id, 'typingInput');
+        assertEqual(main.children[0].children[1].readOnly, true);
         assertEqual(main.children[0].children[0].children.length, Math.ceil(buildRepeatedAlphabet(2).length / PRACTICE_CHARS_PER_LINE));
         assertEqual(main.children[0].children[0].children[0].children.length, PRACTICE_CHARS_PER_LINE);
         assertEqual(main.children[0].children[0].children[0].children[0].textContent, 'a');
@@ -262,6 +270,14 @@ describe('Phase 1 UI shell', () => {
         assertEqual(doc.body.children.length, 1);
         assertEqual(doc.body.children[0].id, 'appShell');
         assertEqual(doc.body.children[0].children[0].id, 'topArea');
+    });
+
+    it('should focus the typing input after rendering', () => {
+        const doc = createMockDocument();
+
+        renderApp(doc);
+
+        assertEqual(doc.focusedElement.id, 'typingInput');
     });
 
     it('should format elapsed time to two decimal places', () => {
@@ -393,6 +409,7 @@ describe('Phase 3 control area', () => {
         targetButtons[1].click();
 
         assertEqual(doc.getElementById('mainArea').children[0].children[0].className, 'practice-target-text');
+        assertEqual(doc.focusedElement.id, 'typingInput');
         assertEqual(targetButtons[0].attributes['aria-pressed'], 'false');
         assertEqual(targetButtons[1].attributes['aria-pressed'], 'true');
         assertEqual(targetButtons[0].classList.contains('is-selected'), false);
@@ -411,6 +428,7 @@ describe('Phase 3 control area', () => {
         restartButton.click();
 
         assertEqual(doc.getElementById('mainArea').children[0].children[0].className, 'practice-target-text');
+        assertEqual(doc.focusedElement.id, 'typingInput');
         assertEqual(restartButton.textContent, '重開');
     });
 
@@ -570,6 +588,7 @@ describe('Phase 4 core logic', () => {
         handleTypingInput(doc, 'a', () => 1000);
         assertEqual(getSessionState(doc).startedAt, 1000);
         assertEqual(doc.getElementById('stopwatchValue').textContent, '0.00s');
+        assertEqual(doc.focusedElement.id, 'typingInput');
 
         updateTimerDisplay(doc, () => 2650);
         assertEqual(doc.getElementById('stopwatchValue').textContent, '1.65s');

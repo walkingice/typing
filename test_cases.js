@@ -18,6 +18,11 @@ assert.match(html, /documentElement\.scrollHeight/);
 assert.match(html, /Math\.max\(contentHeight, window\.innerHeight\)/);
 assert.match(html, /new ResizeObserver/);
 assert.match(html, /function selectGame\(game\)/);
+assert.match(html, /function focusGameFrame\(frame\)/);
+assert.match(html, /frame\.contentDocument\?\.getElementById\(inputId\)/);
+assert.match(html, /frame\.id === 'chars-game'/);
+assert.match(html, /setTimeout\(\(\) => \{/);
+assert.match(html, /if \(!frame\.hidden\)/);
 
 const wordsHtml = fs.readFileSync('words/index.html', 'utf8');
 assert.match(wordsHtml, /body \{[\s\S]*box-sizing: border-box;[\s\S]*min-height: 100vh;/);

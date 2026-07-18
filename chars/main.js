@@ -438,6 +438,15 @@ function createPracticeText(doc, target, typedText = '') {
     }
 
     container.appendChild(text);
+
+    const input = doc.createElement('input');
+    input.type = 'text';
+    input.id = 'typingInput';
+    input.className = 'typing-input';
+    input.readOnly = true;
+    input.setAttribute('aria-label', 'Typing input');
+    input.setAttribute('autocomplete', 'off');
+    container.appendChild(input);
     return container;
 }
 
@@ -526,6 +535,7 @@ function renderPracticeTarget(doc, targetId) {
     updateKeyboardHighlight(doc, target, '');
     updateTimerDisplay(doc);
     updateHighScoreDisplay(doc, target.id);
+    focusTypingInput(doc);
 }
 
 function renderCurrentPracticeText(doc) {
@@ -538,6 +548,18 @@ function renderCurrentPracticeText(doc) {
 
     mainArea.replaceChildren(createPracticeText(doc, getSelectedPracticeTarget(), session.input));
     updateKeyboardHighlight(doc, getSelectedPracticeTarget(), session.input);
+    focusTypingInput(doc);
+    return true;
+}
+
+function focusTypingInput(doc) {
+    const input = doc.getElementById('typingInput');
+
+    if (!input || typeof input.focus !== 'function') {
+        return false;
+    }
+
+    input.focus();
     return true;
 }
 
@@ -828,6 +850,7 @@ function renderApp(doc = document) {
     bindTypingInput(doc);
     updateTimerDisplay(doc);
     updateHighScoreDisplay(doc);
+    focusTypingInput(doc);
 }
 
 function boot() {
@@ -870,6 +893,7 @@ if (typeof module !== 'undefined' && module.exports) {
         updateTimerDisplay,
         updateHighScoreDisplay,
         renderCurrentPracticeText,
+        focusTypingInput,
         handleTypingInput,
         flashErrorBackground,
         showCompletionDialog,
