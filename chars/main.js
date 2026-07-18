@@ -1,5 +1,7 @@
 // main.js - Typing Practice App Shell
 
+const PRACTICE_CHARS_PER_LINE = 14;
+
 const PRACTICE_TARGETS = [
     {
         id: 'lowercaseTwice',
@@ -388,36 +390,34 @@ function createPracticeText(doc, target, typedText = '') {
     const container = doc.createElement('div');
     container.className = 'practice-text';
 
-    const heading = doc.createElement('p');
-    heading.className = 'practice-target-label';
-    heading.textContent = target.label;
-
-    const description = doc.createElement('p');
-    description.className = 'practice-target-description';
-    description.textContent = target.description;
-
     const text = doc.createElement('p');
     text.className = 'practice-target-text';
 
     const characterState = getTypedCharacterState(target.text, typedText);
-    target.text.split('').forEach((character, index) => {
-        const span = doc.createElement('span');
-        span.textContent = character;
-        span.className = 'practice-char';
+    for (let start = 0; start < target.text.length; start += PRACTICE_CHARS_PER_LINE) {
+        const line = doc.createElement('span');
+        line.className = 'practice-target-line';
 
-        if (characterState[index] === 'correct') {
-            span.classList.add('is-correct');
-        } else if (characterState[index] === 'incorrect') {
-            span.classList.add('is-incorrect');
-        } else if (index === typedText.length && typedText.length < target.text.length) {
-            span.classList.add('is-current');
-        }
+        target.text.slice(start, start + PRACTICE_CHARS_PER_LINE).split('').forEach((character, offset) => {
+            const index = start + offset;
+            const span = doc.createElement('span');
+            span.textContent = character;
+            span.className = 'practice-char';
 
-        text.appendChild(span);
-    });
+            if (characterState[index] === 'correct') {
+                span.classList.add('is-correct');
+            } else if (characterState[index] === 'incorrect') {
+                span.classList.add('is-incorrect');
+            } else if (index === typedText.length && typedText.length < target.text.length) {
+                span.classList.add('is-current');
+            }
 
-    container.appendChild(heading);
-    container.appendChild(description);
+            line.appendChild(span);
+        });
+
+        text.appendChild(line);
+    }
+
     container.appendChild(text);
     return container;
 }
@@ -830,6 +830,7 @@ if (typeof document !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         getAppName,
+        PRACTICE_CHARS_PER_LINE,
         createControlButtons,
         buildRepeatedAlphabet,
         buildFiveLetterTarget,

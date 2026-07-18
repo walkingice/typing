@@ -1,6 +1,7 @@
 const { describe, it, assert, assertEqual, getSummary } = require('./test_lib.js');
 const {
     getAppName,
+    PRACTICE_CHARS_PER_LINE,
     createControlButtons,
     buildRepeatedAlphabet,
     buildFiveLetterTarget,
@@ -237,9 +238,14 @@ describe('Phase 1 UI shell', () => {
 
         assertEqual(main.id, 'mainArea');
         assertEqual(main.children.length, 1);
-        assertEqual(main.children[0].children[0].textContent, '字母');
-        assertEqual(main.children[0].children[2].children.length, buildRepeatedAlphabet(2).length);
-        assertEqual(main.children[0].children[2].children[0].textContent, 'a');
+        assertEqual(main.children[0].children.length, 1);
+        assertEqual(main.children[0].children[0].className, 'practice-target-text');
+        assertEqual(main.children[0].children[0].children.length, Math.ceil(buildRepeatedAlphabet(2).length / PRACTICE_CHARS_PER_LINE));
+        assertEqual(main.children[0].children[0].children[0].children.length, PRACTICE_CHARS_PER_LINE);
+        assertEqual(main.children[0].children[0].children[0].children[0].textContent, 'a');
+        assertEqual(main.children[0].children[0].children[0].className, 'practice-target-line');
+        const lastLine = main.children[0].children[0].children.at(-1);
+        assertEqual(lastLine.children.length, buildRepeatedAlphabet(2).length % PRACTICE_CHARS_PER_LINE);
     });
 
     it('should render the app shell into the root element', () => {
@@ -334,11 +340,11 @@ describe('Phase 3 control area', () => {
         const mainArea = doc.getElementById('mainArea');
         const targetButtons = getPracticeTargetButtons(shell);
 
-        assertEqual(mainArea.children[0].children[0].textContent, '字母');
+        assertEqual(mainArea.children[0].children[0].className, 'practice-target-text');
 
         targetButtons[1].click();
 
-        assertEqual(doc.getElementById('mainArea').children[0].children[0].textContent, '字母符號');
+        assertEqual(doc.getElementById('mainArea').children[0].children[0].className, 'practice-target-text');
         assertEqual(targetButtons[0].attributes['aria-pressed'], 'false');
         assertEqual(targetButtons[1].attributes['aria-pressed'], 'true');
     });
@@ -353,7 +359,7 @@ describe('Phase 3 control area', () => {
         targetButtons[2].click();
         doc.getElementById('restartButton').click();
 
-        assertEqual(doc.getElementById('mainArea').children[0].children[0].textContent, '字母反覆');
+        assertEqual(doc.getElementById('mainArea').children[0].children[0].className, 'practice-target-text');
     });
 
     it('should clear stored high scores after confirmation', () => {
@@ -525,13 +531,15 @@ describe('Phase 4 core logic', () => {
         handleTypingInput(doc, 'a', () => 1000);
         handleTypingInput(doc, 'b', () => 1200);
 
-        const mainText = doc.getElementById('mainArea').children[0].children[2];
-        assertEqual(mainText.children[0].classList.contains('is-correct'), true);
-        assertEqual(mainText.children[1].classList.contains('is-correct'), true);
-        assertEqual(mainText.children[2].classList.contains('is-current'), true);
+        const mainText = doc.getElementById('mainArea').children[0].children[0];
+        const firstLine = mainText.children[0];
+        assertEqual(firstLine.children[0].classList.contains('is-correct'), true);
+        assertEqual(firstLine.children[1].classList.contains('is-correct'), true);
+        assertEqual(firstLine.children[2].classList.contains('is-current'), true);
 
         handleTypingInput(doc, 'x', () => 1400);
-        assertEqual(doc.getElementById('mainArea').children[0].children[2].children[2].classList.contains('is-incorrect'), true);
+        const updatedFirstLine = doc.getElementById('mainArea').children[0].children[0].children[0];
+        assertEqual(updatedFirstLine.children[2].classList.contains('is-incorrect'), true);
     });
 
     it('should flash the main area after incorrect input', () => {
@@ -567,7 +575,7 @@ describe('Phase 4 core logic', () => {
         handleTypingInput(doc, 'Backspace', () => 1200);
 
         assertEqual(getSessionState(doc).input, 'a');
-        assertEqual(doc.getElementById('mainArea').children[0].children[2].children[1].classList.contains('is-current'), true);
+        assertEqual(doc.getElementById('mainArea').children[0].children[0].children[0].children[1].classList.contains('is-current'), true);
 
         const session = resetSessionState(doc, 'lowercaseTwice');
         const expected = getPracticeTargetById(session.targetId).text;
