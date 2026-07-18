@@ -18,6 +18,12 @@ const PRACTICE_TARGETS = [
         label: '字母反覆',
         description: 'Lowercase letters a-z, split into segments of 7 letters. Each segment repeats 3 times before moving to the next.',
         text: buildSegmentedAlphabet()
+    },
+    {
+        id: 'fiveLettersTest',
+        label: '測試目標',
+        description: 'Lowercase letters a through e only, for testing.',
+        text: buildFiveLetterTarget()
     }
 ];
 
@@ -65,6 +71,10 @@ function resetSessionState(doc, targetId = selectedTargetId) {
 function buildRepeatedAlphabet(repeatCount) {
     const letters = 'abcdefghijklmnopqrstuvwxyz';
     return Array.from({ length: repeatCount }, () => letters).join('');
+}
+
+function buildFiveLetterTarget() {
+    return 'abcde';
 }
 
 function buildAlphabetWithSymbols(repeatCount) {
@@ -605,6 +615,7 @@ if (typeof module !== 'undefined' && module.exports) {
         getAppName,
         createControlButtons,
         buildRepeatedAlphabet,
+        buildFiveLetterTarget,
         buildAlphabetWithSymbols,
         buildSegmentedAlphabet,
         getPracticeTargetById,

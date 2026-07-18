@@ -3,6 +3,7 @@ const {
     getAppName,
     createControlButtons,
     buildRepeatedAlphabet,
+    buildFiveLetterTarget,
     buildAlphabetWithSymbols,
     buildSegmentedAlphabet,
     getPracticeTargetById,
@@ -201,6 +202,16 @@ describe('Phase 1 UI shell', () => {
         assertEqual(target.text, buildRepeatedAlphabet(2));
     });
 
+    it('should expose the five-letter test target', () => {
+        const target = getPracticeTargetById('fiveLettersTest');
+
+        assertEqual(target.id, 'fiveLettersTest');
+        assertEqual(target.label, '測試目標');
+        assertEqual(target.text, 'abcde');
+        assertEqual(target.text.length, 5);
+        assertEqual(buildFiveLetterTarget(), 'abcde');
+    });
+
     it('should create three main areas in the app shell', () => {
         const doc = createMockDocument();
         const shell = createAppShell(doc);
@@ -293,13 +304,15 @@ describe('Phase 3 control area', () => {
         const shell = createAppShell(doc);
         const buttons = getPracticeTargetButtons(shell);
 
-        assertEqual(buttons.length, 3);
+        assertEqual(buttons.length, 4);
         assertEqual(buttons[0].id, 'target-lowercaseTwice');
         assertEqual(buttons[0].attributes['aria-pressed'], 'true');
         assertEqual(buttons[1].attributes['aria-pressed'], 'false');
         assertEqual(buttons[0].textContent, '字母');
         assertEqual(buttons[1].textContent, '字母符號');
         assertEqual(buttons[2].textContent, '字母反覆');
+        assertEqual(buttons[3].id, 'target-fiveLettersTest');
+        assertEqual(buttons[3].textContent, '測試目標');
     });
 
     it('should update main content when selecting a practice target', () => {
