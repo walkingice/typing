@@ -282,6 +282,15 @@ describe('Phase 2 keyboard area', () => {
         assert(html.includes('.keyboard-body {\n            width: 100%;\n        }'));
     });
 
+    it('should add half-key spacing between left and right hand keys', () => {
+        const html = fs.readFileSync('index.html', 'utf8');
+
+        assert(html.includes('.keyboard-row:nth-child(2) .keyboard-key:nth-child(6),'));
+        assert(html.includes('.keyboard-row:nth-child(3) .keyboard-key:nth-child(6),'));
+        assert(html.includes('.keyboard-row:nth-child(4) .keyboard-key:nth-child(6) {'));
+        assert(html.includes('margin-left: 1.1rem;'));
+    });
+
     it('should create the keyboard layout rows', () => {
         const layout = createKeyboardLayout();
 
