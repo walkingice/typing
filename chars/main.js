@@ -33,7 +33,7 @@ function getAppName() {
 
 function createControlButtons() {
     return [
-        { id: 'restartButton', label: 'Restart' }
+        { id: 'restartButton', label: '重開' }
     ];
 }
 
@@ -289,11 +289,11 @@ function createKeyboardKey(doc, keyLabel) {
 }
 
 function createTargetButton(doc, target) {
-    const button = createButton(doc, `target-${target.id}`, target.label, 'secondary');
+    const button = createButton(doc, `target-${target.id}`, target.label, 'mode-toggle');
     button.setAttribute('data-target-id', target.id);
     button.setAttribute('aria-pressed', String(target.id === selectedTargetId));
     if (target.id === selectedTargetId) {
-        button.className = 'secondary is-selected';
+        button.className = 'mode-toggle is-selected';
     }
     return button;
 }
@@ -357,18 +357,23 @@ function createTopSection(doc) {
     const controls = doc.createElement('div');
     controls.className = 'control-row';
 
+    const modeGroup = doc.createElement('div');
+    modeGroup.className = 'practice-mode-group';
+    modeGroup.setAttribute('role', 'group');
+    modeGroup.setAttribute('aria-label', '練習模式');
+
     const statusRow = doc.createElement('div');
     statusRow.className = 'status-row';
     statusRow.appendChild(createStatusLabel(doc, 'Stopwatch', '0.00s', 'stopwatchValue'));
     statusRow.appendChild(createHighScoreButton(doc, '--'));
 
     PRACTICE_TARGETS.forEach((target) => {
-        controls.appendChild(createTargetButton(doc, target));
+        modeGroup.appendChild(createTargetButton(doc, target));
     });
+    controls.appendChild(modeGroup);
 
-    createControlButtons().forEach((item, index) => {
-        const variant = index === 0 ? 'secondary' : '';
-        controls.appendChild(createButton(doc, item.id, item.label, variant));
+    createControlButtons().forEach((item) => {
+        controls.appendChild(createButton(doc, item.id, item.label, 'primary-action'));
     });
 
     const bar = doc.createElement('div');
@@ -434,7 +439,7 @@ function createKeyboardSection(doc) {
     title.type = 'button';
     title.id = 'toggleKeyboardButton';
     title.className = 'keyboard-titlebar';
-    title.textContent = 'Keyboard area';
+    title.textContent = '鍵盤提示';
     title.setAttribute('aria-pressed', 'true');
 
     const body = doc.createElement('div');
@@ -487,7 +492,7 @@ function updatePracticeTargetButtons(doc, targetId) {
         }
 
         const isSelected = target.id === targetId;
-        button.className = isSelected ? 'secondary is-selected' : 'secondary';
+        button.className = isSelected ? 'mode-toggle is-selected' : 'mode-toggle';
         button.setAttribute('aria-pressed', String(isSelected));
     });
 }
@@ -785,6 +790,16 @@ function bindRestartButton(doc) {
 
     button.addEventListener('click', () => {
         renderPracticeTarget(doc, selectedTargetId);
+        button.textContent = '已重開';
+        button.classList.add('is-feedback');
+        if (button.feedbackTimer) {
+            clearTimeout(button.feedbackTimer);
+        }
+        button.feedbackTimer = setTimeout(() => {
+            button.textContent = '重開';
+            button.classList.remove('is-feedback');
+            button.feedbackTimer = null;
+        }, 900);
     });
 }
 

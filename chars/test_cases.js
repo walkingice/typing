@@ -176,10 +176,8 @@ function getKeyboardToggleButton(shell) {
 }
 
 function getPracticeTargetButtons(shell) {
-    return Array.from(shell.children[0].children[0].children[2].children).filter((button) => {
-        const id = button.id || '';
-        return id.startsWith('target-');
-    });
+    const modeGroup = shell.children[0].children[0].children[2].children[0];
+    return Array.from(modeGroup.children);
 }
 
 describe('Basic Infrastructure', () => {
@@ -193,7 +191,7 @@ describe('Phase 1 UI shell', () => {
         const buttons = createControlButtons();
         assertEqual(buttons.length, 1);
         assertEqual(buttons[0].id, 'restartButton');
-        assertEqual(buttons[0].label, 'Restart');
+        assertEqual(buttons[0].label, '重開');
     });
 
     it('should build practice target text sets', () => {
@@ -284,7 +282,7 @@ describe('Phase 2 keyboard area', () => {
 
         assertEqual(keyboard.id, 'keyboardArea');
         assertEqual(keyboard.children.length, 2);
-        assertEqual(keyboard.children[0].textContent, 'Keyboard area');
+        assertEqual(keyboard.children[0].textContent, '鍵盤提示');
         assertEqual(keyboard.children[1].id, 'keyboardBody');
         assertEqual(keyboard.children[1].children.length, 1);
         assertEqual(keyboard.children[1].children[0].children.length, 4);
@@ -308,13 +306,13 @@ describe('Phase 2 keyboard area', () => {
         assertEqual(setKeyboardVisibility(doc, false), true);
         assertEqual(keyboard.classList.contains('is-collapsed'), true);
         assertEqual(keyboardBody.classList.contains('is-hidden'), true);
-        assertEqual(button.textContent, 'Keyboard area');
+        assertEqual(button.textContent, '鍵盤提示');
         assertEqual(button.attributes['aria-pressed'], 'false');
 
         assertEqual(toggleKeyboardVisibility(doc), true);
         assertEqual(keyboard.classList.contains('is-collapsed'), false);
         assertEqual(keyboardBody.classList.contains('is-hidden'), false);
-        assertEqual(button.textContent, 'Keyboard area');
+        assertEqual(button.textContent, '鍵盤提示');
         assertEqual(button.attributes['aria-pressed'], 'true');
     });
 });
@@ -332,6 +330,7 @@ describe('Phase 3 control area', () => {
         assertEqual(buttons[0].textContent, '字母');
         assertEqual(buttons[1].textContent, '字母符號');
         assertEqual(buttons[2].textContent, '字母反覆');
+        assertEqual(shell.children[0].children[0].children[2].children[0].className, 'practice-mode-group');
         assertEqual(buttons[0].classList.contains('is-selected'), true);
         assertEqual(buttons[1].classList.contains('is-selected'), false);
         assertEqual(buttons[2].classList.contains('is-selected'), false);
@@ -365,9 +364,12 @@ describe('Phase 3 control area', () => {
 
         const targetButtons = getPracticeTargetButtons(shell);
         targetButtons[2].click();
-        doc.getElementById('restartButton').click();
+        const restartButton = doc.getElementById('restartButton');
+        restartButton.click();
 
         assertEqual(doc.getElementById('mainArea').children[0].children[0].className, 'practice-target-text');
+        assertEqual(restartButton.textContent, '已重開');
+        assertEqual(restartButton.classList.contains('is-feedback'), true);
     });
 
     it('should clear stored high scores after confirmation', () => {
