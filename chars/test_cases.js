@@ -196,7 +196,7 @@ describe('Phase 1 UI shell', () => {
 
     it('should build practice target text sets', () => {
         assertEqual(buildRepeatedAlphabet(2), 'abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz');
-        assertEqual(buildAlphabetWithSymbols(1), 'abcdefghijklmnopqrstuvwxyz!@.-');
+        assertEqual(buildAlphabetWithSymbols(1), 'abcdefghijklmnopqrstuvwxyz!@.-,');
         assertEqual(
             buildSegmentedAlphabet(),
             'abcdefgabcdefgabcdefghijklmnhijklmnhijklmnopqrstuopqrstuopqrstuvwxyzvwxyzvwxyz'
@@ -271,9 +271,12 @@ describe('Phase 2 keyboard area', () => {
         const layout = createKeyboardLayout();
 
         assertEqual(layout.length, 4);
-        assertEqual(layout[0][0], 'q');
-        assertEqual(layout[2][6], 'm');
-        assertEqual(layout[3].join(''), '!@.-');
+        assertEqual(layout[0][0].key, '!');
+        assertEqual(layout[0][1].key, '@');
+        assertEqual(layout[0][9].key, '-');
+        assertEqual(layout[1][0].key, 'q');
+        assertEqual(layout[3][6].key, 'm');
+        assertEqual(layout[3].slice(6).map((definition) => definition.key).join(''), 'm,.');
     });
 
     it('should render the keyboard area content', () => {
@@ -286,7 +289,8 @@ describe('Phase 2 keyboard area', () => {
         assertEqual(keyboard.children[1].id, 'keyboardBody');
         assertEqual(keyboard.children[1].children.length, 1);
         assertEqual(keyboard.children[1].children[0].children.length, 4);
-        assertEqual(keyboard.children[1].children[0].children[0].children[0].attributes['data-key'], 'q');
+        assertEqual(keyboard.children[1].children[0].children[0].children[0].attributes['data-key'], '!');
+        assertEqual(keyboard.children[1].children[0].children[1].children[0].attributes['data-key'], 'q');
     });
 
     it('should toggle keyboard visibility state', () => {
@@ -417,9 +421,9 @@ describe('Phase 3 control area', () => {
         });
 
         const stored = JSON.parse(localStorage.getItem(getHighScoreStorageKey()));
-        assertEqual(stored.symbolsTwice, 5900);
-        assertEqual(doc.getElementById('highScoreValue').textContent, '5.90s');
-        assertEqual(alerts[0], 'New high score: 5.90s');
+        assertEqual(stored.symbolsTwice, 6100);
+        assertEqual(doc.getElementById('highScoreValue').textContent, '6.10s');
+        assertEqual(alerts[0], 'New high score: 6.10s');
     });
 });
 
@@ -430,7 +434,7 @@ describe('Phase 4 core logic', () => {
         registerAppTree(doc, doc.body.children[0]);
 
         const keyboard = doc.getElementById('keyboardBody').children[0];
-        const keyA = keyboard.children[1].children[0];
+        const keyA = keyboard.children[2].children[0];
         updateKeyboardPressedKey(doc, 'A', true);
 
         assertEqual(keyA.classList.contains('is-pressed'), true);
@@ -446,7 +450,7 @@ describe('Phase 4 core logic', () => {
         renderApp(doc);
         registerAppTree(doc, doc.body.children[0]);
 
-        const keyA = doc.getElementById('keyboardBody').children[0].children[1].children[0];
+        const keyA = doc.getElementById('keyboardBody').children[0].children[2].children[0];
         doc.listeners.keydown({ key: 'a' });
         assertEqual(keyA.classList.contains('is-pressed'), true);
 
@@ -460,11 +464,11 @@ describe('Phase 4 core logic', () => {
         registerAppTree(doc, doc.body.children[0]);
 
         const keyboard = doc.getElementById('keyboardBody').children[0];
-        const firstKey = keyboard.children[1].children[0];
+        const firstKey = keyboard.children[2].children[0];
         assertEqual(firstKey.classList.contains('is-current'), true);
 
         handleTypingInput(doc, 'a', () => 1000);
-        const secondKey = keyboard.children[2].children[4];
+        const secondKey = keyboard.children[3].children[4];
         assertEqual(firstKey.classList.contains('is-current'), false);
         assertEqual(secondKey.classList.contains('is-current'), true);
     });
@@ -478,11 +482,11 @@ describe('Phase 4 core logic', () => {
         handleTypingInput(doc, 'Backspace', () => 1100);
 
         const keyboard = doc.getElementById('keyboardBody').children[0];
-        assertEqual(keyboard.children[1].children[0].classList.contains('is-current'), true);
+        assertEqual(keyboard.children[2].children[0].classList.contains('is-current'), true);
 
         doc.getElementById('target-symbolsTwice').click();
         updateKeyboardHighlight(doc, getPracticeTargetById('symbolsTwice'), 'abcdefghijklmnopqrstuvwxyz');
-        assertEqual(keyboard.children[3].children[0].classList.contains('is-current'), true);
+        assertEqual(keyboard.children[0].children[0].classList.contains('is-current'), true);
     });
 
     it('should clear the keyboard hint after completing the target', () => {

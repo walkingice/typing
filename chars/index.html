@@ -70,8 +70,8 @@
         }
 
         .panel-bottom {
-            flex: 0 0 25vh;
-            min-height: 160px;
+            flex: 0 0 clamp(260px, 34vh, 360px);
+            min-height: 260px;
             display: flex;
             flex-direction: column;
             align-items: stretch;
@@ -215,7 +215,7 @@
         .keyboard-layout {
             display: flex;
             flex-direction: column;
-            gap: 10px;
+            gap: 18px;
         }
 
         .keyboard-row {
@@ -225,7 +225,27 @@
             flex-wrap: wrap;
         }
 
+        .keyboard-symbol-row {
+            margin-bottom: -8px;
+            transform: translateY(4px);
+        }
+
+        .keyboard-symbol-row .keyboard-key:nth-child(1),
+        .keyboard-symbol-row .keyboard-key:nth-child(2) {
+            left: -18px;
+        }
+
+        .keyboard-symbol-row .keyboard-key:nth-child(10) {
+            left: 18px;
+        }
+
+        .keyboard-key-spacer {
+            min-width: 2.2rem;
+            padding: 10px 12px;
+        }
+
         .keyboard-key {
+            position: relative;
             min-width: 2.2rem;
             padding: 10px 12px;
             border: 1px solid var(--border);

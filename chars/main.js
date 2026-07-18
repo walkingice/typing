@@ -75,7 +75,7 @@ function buildRepeatedAlphabet(repeatCount) {
 }
 
 function buildAlphabetWithSymbols(repeatCount) {
-    const letters = 'abcdefghijklmnopqrstuvwxyz!@.-';
+    const letters = 'abcdefghijklmnopqrstuvwxyz!@.-,';
     return Array.from({ length: repeatCount }, () => letters).join('');
 }
 
@@ -272,19 +272,36 @@ function createButton(doc, id, label, variant) {
 
 function createKeyboardLayout() {
     return [
-        ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
-        ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-        ['z', 'x', 'c', 'v', 'b', 'n', 'm'],
-        ['!', '@', '.', '-']
+        [
+            { key: '!' },
+            { key: '@' },
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            { key: '-' }
+        ],
+        ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'].map((key) => ({ key })),
+        ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'].map((key) => ({ key })),
+        ['z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.'].map((key) => ({ key }))
     ];
 }
 
-function createKeyboardKey(doc, keyLabel) {
+function createKeyboardKey(doc, definition) {
+    if (!definition) {
+        const spacer = doc.createElement('div');
+        spacer.className = 'keyboard-key-spacer';
+        return spacer;
+    }
+
     const key = doc.createElement('div');
     key.className = 'keyboard-key';
-    key.textContent = keyLabel;
-    key.setAttribute('data-key', keyLabel);
-    key.setAttribute('aria-label', `Key ${keyLabel}`);
+    key.textContent = definition.key;
+    key.setAttribute('data-key', definition.key);
+    key.setAttribute('aria-label', `Key ${definition.key}`);
     return key;
 }
 
@@ -298,9 +315,9 @@ function createTargetButton(doc, target) {
     return button;
 }
 
-function createKeyboardRow(doc, keys) {
+function createKeyboardRow(doc, keys, rowIndex) {
     const row = doc.createElement('div');
-    row.className = 'keyboard-row';
+    row.className = rowIndex === 0 ? 'keyboard-row keyboard-symbol-row' : 'keyboard-row';
 
     keys.forEach((keyLabel) => {
         row.appendChild(createKeyboardKey(doc, keyLabel));
@@ -323,7 +340,10 @@ function updateKeyboardHighlight(doc, target = getSelectedPracticeTarget(), inpu
     const keyboard = keyboardBody.children[0];
     Array.from(keyboard.children).forEach((row) => {
         Array.from(row.children).forEach((key) => {
-            const isCurrent = key.getAttribute('data-key') === nextCharacter;
+            const isCurrent = nextCharacter !== null && (
+                key.getAttribute('data-key') === nextCharacter
+                || key.getAttribute('data-shift-key') === nextCharacter
+            );
             key.classList.toggle('is-current', isCurrent);
         });
     });
@@ -340,10 +360,9 @@ function updateKeyboardPressedKey(doc, keyValue, isPressed) {
     const keyboard = keyboardBody.children[0];
     Array.from(keyboard.children).forEach((row) => {
         Array.from(row.children).forEach((key) => {
-            const isPressedKey = key.getAttribute('data-key') === keyLabel;
-            if (isPressedKey) {
-                key.classList.toggle('is-pressed', isPressed);
-            }
+            const isPressedKey = key.getAttribute('data-key') === keyLabel
+                || key.getAttribute('data-shift-key') === keyLabel;
+            key.classList.toggle('is-pressed', isPressedKey && isPressed);
         });
     });
     return true;
@@ -449,8 +468,8 @@ function createKeyboardSection(doc) {
     const keyboard = doc.createElement('div');
     keyboard.className = 'keyboard-layout';
 
-    createKeyboardLayout().forEach((keys) => {
-        keyboard.appendChild(createKeyboardRow(doc, keys));
+    createKeyboardLayout().forEach((keys, index) => {
+        keyboard.appendChild(createKeyboardRow(doc, keys, index));
     });
 
     body.appendChild(keyboard);
