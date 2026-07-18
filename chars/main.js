@@ -1,4 +1,4 @@
-// main.js - Typing Practice App Shell
+// main.js - Character typing app shell
 
 const PRACTICE_CHARS_PER_LINE = 20;
 const PRACTICE_CHARS_PER_GROUP = 5;
@@ -26,10 +26,6 @@ const PRACTICE_TARGETS = [
 
 let selectedTargetId = PRACTICE_TARGETS[0].id;
 const sessionStateByDocument = new WeakMap();
-
-function getAppName() {
-    return 'Typing Practice';
-}
 
 function createControlButtons() {
     return [
@@ -373,8 +369,6 @@ function updateKeyboardPressedKey(doc, keyValue, isPressed) {
 
 function createTopSection(doc) {
     const section = createSection(doc, 'panel panel-top', 'topArea');
-    const title = doc.createElement('h1');
-    title.textContent = getAppName();
 
     const controls = doc.createElement('div');
     controls.className = 'control-row';
@@ -400,7 +394,6 @@ function createTopSection(doc) {
 
     const bar = doc.createElement('div');
     bar.className = 'control-bar';
-    bar.appendChild(title);
     bar.appendChild(statusRow);
     bar.appendChild(controls);
 
@@ -855,7 +848,6 @@ if (typeof document !== 'undefined') {
 
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
-        getAppName,
         PRACTICE_CHARS_PER_LINE,
         PRACTICE_CHARS_PER_GROUP,
         createControlButtons,

@@ -1,7 +1,6 @@
 const fs = require('fs');
 const { describe, it, assert, assertEqual, getSummary } = require('./test_lib.js');
 const {
-    getAppName,
     PRACTICE_CHARS_PER_LINE,
     PRACTICE_CHARS_PER_GROUP,
     createControlButtons,
@@ -177,13 +176,17 @@ function getKeyboardToggleButton(shell) {
 }
 
 function getPracticeTargetButtons(shell) {
-    const modeGroup = shell.children[0].children[0].children[2].children[0];
+    const modeGroup = shell.children[0].children[0].children[1].children[0];
     return Array.from(modeGroup.children);
 }
 
 describe('Basic Infrastructure', () => {
-    it('should return correct application name', () => {
-        assertEqual(getAppName(), 'Typing Practice');
+    it('should omit the application title from the top area', () => {
+        const doc = createMockDocument();
+        const shell = createAppShell(doc);
+        const topBar = shell.children[0].children[0];
+
+        assertEqual(topBar.children.some((child) => child.tagName === 'H1'), false);
     });
 });
 
@@ -370,7 +373,7 @@ describe('Phase 3 control area', () => {
         assertEqual(buttons[0].textContent, '字母');
         assertEqual(buttons[1].textContent, '字母符號');
         assertEqual(buttons[2].textContent, '字母反覆');
-        assertEqual(shell.children[0].children[0].children[2].children[0].className, 'practice-mode-group');
+        assertEqual(shell.children[0].children[0].children[1].children[0].className, 'practice-mode-group');
         assertEqual(buttons[0].classList.contains('is-selected'), true);
         assertEqual(buttons[1].classList.contains('is-selected'), false);
         assertEqual(buttons[2].classList.contains('is-selected'), false);

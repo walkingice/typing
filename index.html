@@ -96,20 +96,20 @@
 <body>
     <main class="app-shell">
         <nav class="navigation" role="tablist" aria-orientation="vertical" aria-label="Typing games">
-            <button class="tab is-active" type="button" role="tab" id="words-tab"
-                aria-controls="words-game" aria-selected="true" data-game="words">
-                Words
+            <button class="tab is-active" type="button" role="tab" id="chars-tab"
+                aria-controls="chars-game" aria-selected="true" data-game="chars">
+                字母
             </button>
-            <button class="tab" type="button" role="tab" id="chars-tab"
-                aria-controls="chars-game" aria-selected="false" data-game="chars">
-                Chars
+            <button class="tab" type="button" role="tab" id="words-tab"
+                aria-controls="words-game" aria-selected="false" data-game="words">
+                單字
             </button>
         </nav>
 
-        <iframe class="game-frame" id="words-game" src="words/index.html"
-            title="Words typing game" scrolling="no"></iframe>
         <iframe class="game-frame" id="chars-game" src="chars/index.html"
-            title="Chars typing game" scrolling="no" hidden></iframe>
+            title="Chars typing game" scrolling="no"></iframe>
+        <iframe class="game-frame" id="words-game" src="words/index.html"
+            title="Words typing game" scrolling="no" hidden></iframe>
     </main>
 
     <script>
