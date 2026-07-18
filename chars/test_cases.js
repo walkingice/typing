@@ -23,6 +23,7 @@ const {
     toggleKeyboardVisibility,
     askToClearHighScore,
     updateTimerDisplay,
+    getHighScoreStorageKey,
     handleTypingInput,
     renderApp
 } = require('./main.js');
@@ -47,6 +48,7 @@ function createMockElement(tagName) {
         listeners: {},
         children: [],
         confirm: null,
+        alert: null,
         classList: {
             add(...names) {
                 names.forEach((name) => classSet.add(name));
@@ -370,6 +372,31 @@ describe('Phase 3 control area', () => {
         askToClearHighScore(doc);
 
         assertEqual(localStorage.getItem('typingPracticeHighScores'), '1');
+    });
+
+    it('should update the high score and show the completion dialog', () => {
+        localStorage.clear();
+
+        const doc = createMockDocument();
+        const alerts = [];
+        doc.alert = (message) => {
+            alerts.push(message);
+        };
+        renderApp(doc);
+        const shell = doc.body.children[0];
+        registerAppTree(doc, shell);
+
+        doc.getElementById('target-fiveLettersTest').click();
+        const expected = getPracticeTargetById('fiveLettersTest').text;
+
+        expected.split('').forEach((character, index) => {
+            handleTypingInput(doc, character, () => 1000 + index * 100);
+        });
+
+        const stored = JSON.parse(localStorage.getItem(getHighScoreStorageKey()));
+        assertEqual(stored.fiveLettersTest, 400);
+        assertEqual(doc.getElementById('highScoreValue').textContent, '0.40s');
+        assertEqual(alerts[0], 'New high score: 0.40s');
     });
 });
 

@@ -47,7 +47,8 @@ function createSessionState(targetId = selectedTargetId) {
         startedAt: null,
         finishedAt: null,
         isCompleted: false,
-        lastElapsedMs: 0
+        lastElapsedMs: 0,
+        timerHandle: null
     };
 }
 
@@ -65,6 +66,9 @@ function setSessionState(doc, nextState) {
 }
 
 function resetSessionState(doc, targetId = selectedTargetId) {
+    if (sessionStateByDocument.has(doc)) {
+        clearTimerLoop(sessionStateByDocument.get(doc));
+    }
     return setSessionState(doc, createSessionState(targetId));
 }
 
@@ -96,6 +100,48 @@ function buildSegmentedAlphabet() {
 
 function formatElapsedTime(ms) {
     return `${(ms / 1000).toFixed(2)}s`;
+}
+
+function getHighScoreStorageKey() {
+    return 'typingPracticeHighScores';
+}
+
+function readHighScoreRecords() {
+    if (typeof localStorage === 'undefined') {
+        return {};
+    }
+
+    try {
+        const raw = localStorage.getItem(getHighScoreStorageKey());
+        return raw ? JSON.parse(raw) : {};
+    } catch (error) {
+        return {};
+    }
+}
+
+function writeHighScoreRecords(records) {
+    if (typeof localStorage === 'undefined') {
+        return false;
+    }
+
+    localStorage.setItem(getHighScoreStorageKey(), JSON.stringify(records));
+    return true;
+}
+
+function getHighScoreForTarget(targetId) {
+    const records = readHighScoreRecords();
+    const value = records[targetId];
+    return typeof value === 'number' ? value : null;
+}
+
+function setHighScoreForTarget(targetId, elapsedMs) {
+    const records = readHighScoreRecords();
+    records[targetId] = elapsedMs;
+    return writeHighScoreRecords(records);
+}
+
+function formatHighScoreValue(elapsedMs) {
+    return elapsedMs === null ? '--' : formatElapsedTime(elapsedMs);
 }
 
 function getPracticeText(targetId = selectedTargetId) {
@@ -140,6 +186,18 @@ function updateTimerDisplay(doc, nowFn = () => Date.now()) {
 
     session.lastElapsedMs = elapsedMs;
     stopwatch.textContent = formatElapsedTime(elapsedMs);
+    return elapsedMs;
+}
+
+function updateHighScoreDisplay(doc, targetId = selectedTargetId) {
+    const highScoreValue = doc.getElementById('highScoreValue');
+
+    if (!highScoreValue) {
+        return null;
+    }
+
+    const elapsedMs = getHighScoreForTarget(targetId);
+    highScoreValue.textContent = formatHighScoreValue(elapsedMs);
     return elapsedMs;
 }
 
@@ -403,6 +461,7 @@ function renderPracticeTarget(doc, targetId) {
 
     updatePracticeTargetButtons(doc, target.id);
     updateTimerDisplay(doc);
+    updateHighScoreDisplay(doc, target.id);
 }
 
 function renderCurrentPracticeText(doc) {
@@ -425,8 +484,110 @@ function finalizeSession(doc, nowFn = () => Date.now()) {
 
     session.finishedAt = nowFn();
     session.isCompleted = true;
+    clearTimerLoop(session);
     updateTimerDisplay(doc, nowFn);
+    const result = updateHighScoreRecord(doc);
+    showCompletionDialog(doc, result);
     return session;
+}
+
+function clearTimerLoop(session) {
+    if (!session || session.timerHandle === null) {
+        return;
+    }
+
+    if (typeof clearTimeout === 'function') {
+        clearTimeout(session.timerHandle);
+    }
+
+    session.timerHandle = null;
+}
+
+function scheduleTimerLoop(doc) {
+    const session = getSessionState(doc);
+
+    if (session.timerHandle !== null || session.isCompleted) {
+        return;
+    }
+
+    if (typeof setTimeout !== 'function' || !doc.defaultView) {
+        return;
+    }
+
+    const tick = () => {
+        session.timerHandle = null;
+
+        if (session.isCompleted || session.startedAt === null) {
+            return;
+        }
+
+        updateTimerDisplay(doc);
+        session.timerHandle = setTimeout(tick, 16);
+    };
+
+    session.timerHandle = setTimeout(tick, 16);
+}
+
+function updateHighScoreRecord(doc) {
+    const session = getSessionState(doc);
+
+    if (session.startedAt === null) {
+        return {
+            isNewHighScore: false,
+            bestTime: null,
+            previousBestTime: null
+        };
+    }
+
+    const currentHighScore = getHighScoreForTarget(session.targetId);
+    const elapsedMs = session.lastElapsedMs;
+
+    if (currentHighScore === null || elapsedMs < currentHighScore) {
+        setHighScoreForTarget(session.targetId, elapsedMs);
+        updateHighScoreDisplay(doc, session.targetId);
+        return {
+            isNewHighScore: true,
+            bestTime: elapsedMs,
+            previousBestTime: currentHighScore
+        };
+    }
+
+    updateHighScoreDisplay(doc, session.targetId);
+    return {
+        isNewHighScore: false,
+        bestTime: currentHighScore,
+        previousBestTime: currentHighScore
+    };
+}
+
+function getAlertFn(doc) {
+    if (typeof doc.alert === 'function') {
+        return doc.alert.bind(doc);
+    }
+
+    if (typeof alert === 'function') {
+        return alert;
+    }
+
+    return null;
+}
+
+function showCompletionDialog(doc, result = null) {
+    const session = getSessionState(doc);
+    const bestTime = result && typeof result.bestTime === 'number'
+        ? result.bestTime
+        : getHighScoreForTarget(session.targetId);
+    const isNewHighScore = result ? result.isNewHighScore : false;
+    const message = isNewHighScore
+        ? `New high score: ${formatElapsedTime(session.lastElapsedMs)}`
+        : `Finished in ${formatElapsedTime(session.lastElapsedMs)}. High score: ${formatHighScoreValue(bestTime)}. Difference: ${bestTime === null ? '--' : formatElapsedTime(session.lastElapsedMs - bestTime)}`;
+
+    const alertFn = getAlertFn(doc);
+    if (alertFn) {
+        alertFn(message);
+    }
+
+    return message;
 }
 
 function flashErrorBackground(doc) {
@@ -463,6 +624,7 @@ function handleTypingInput(doc, key, nowFn = () => Date.now()) {
 
     if (session.startedAt === null) {
         session.startedAt = nowFn();
+        scheduleTimerLoop(doc);
     }
 
     session.input += key;
@@ -520,6 +682,7 @@ function confirmClearHighScore(doc) {
         localStorage.removeItem('typingPracticeHighScores');
     }
 
+    updateHighScoreDisplay(doc);
     return true;
 }
 
@@ -592,6 +755,7 @@ function renderApp(doc = document) {
     bindRestartButton(doc);
     bindTypingInput(doc);
     updateTimerDisplay(doc);
+    updateHighScoreDisplay(doc);
 }
 
 function boot() {
@@ -625,10 +789,14 @@ if (typeof module !== 'undefined' && module.exports) {
         getSessionState,
         resetSessionState,
         formatElapsedTime,
+        getHighScoreStorageKey,
+        getHighScoreForTarget,
         getTypedCharacterState,
         updateTimerDisplay,
+        updateHighScoreDisplay,
         renderCurrentPracticeText,
         handleTypingInput,
+        showCompletionDialog,
         createMainSection,
         createKeyboardSection,
         createAppShell,
