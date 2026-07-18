@@ -16,5 +16,4 @@
 ## Implementation
 
 * Read the game rules from `@GAME_RULES.md`.
-* Read the current development plan from `@PLANS.md`.
 
