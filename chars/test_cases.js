@@ -5,7 +5,6 @@ const {
     PRACTICE_CHARS_PER_GROUP,
     createControlButtons,
     buildRepeatedAlphabet,
-    buildFiveLetterTarget,
     buildAlphabetWithSymbols,
     buildSegmentedAlphabet,
     getPracticeTargetById,
@@ -213,16 +212,6 @@ describe('Phase 1 UI shell', () => {
         assertEqual(target.text, buildRepeatedAlphabet(2));
     });
 
-    it('should expose the five-letter test target', () => {
-        const target = getPracticeTargetById('fiveLettersTest');
-
-        assertEqual(target.id, 'fiveLettersTest');
-        assertEqual(target.label, '測試目標');
-        assertEqual(target.text, 'abcde');
-        assertEqual(target.text.length, 5);
-        assertEqual(buildFiveLetterTarget(), 'abcde');
-    });
-
     it('should create three main areas in the app shell', () => {
         const doc = createMockDocument();
         const shell = createAppShell(doc);
@@ -336,15 +325,16 @@ describe('Phase 3 control area', () => {
         const shell = createAppShell(doc);
         const buttons = getPracticeTargetButtons(shell);
 
-        assertEqual(buttons.length, 4);
+        assertEqual(buttons.length, 3);
         assertEqual(buttons[0].id, 'target-lowercaseTwice');
         assertEqual(buttons[0].attributes['aria-pressed'], 'true');
         assertEqual(buttons[1].attributes['aria-pressed'], 'false');
         assertEqual(buttons[0].textContent, '字母');
         assertEqual(buttons[1].textContent, '字母符號');
         assertEqual(buttons[2].textContent, '字母反覆');
-        assertEqual(buttons[3].id, 'target-fiveLettersTest');
-        assertEqual(buttons[3].textContent, '測試目標');
+        assertEqual(buttons[0].classList.contains('is-selected'), true);
+        assertEqual(buttons[1].classList.contains('is-selected'), false);
+        assertEqual(buttons[2].classList.contains('is-selected'), false);
     });
 
     it('should update main content when selecting a practice target', () => {
@@ -363,6 +353,8 @@ describe('Phase 3 control area', () => {
         assertEqual(doc.getElementById('mainArea').children[0].children[0].className, 'practice-target-text');
         assertEqual(targetButtons[0].attributes['aria-pressed'], 'false');
         assertEqual(targetButtons[1].attributes['aria-pressed'], 'true');
+        assertEqual(targetButtons[0].classList.contains('is-selected'), false);
+        assertEqual(targetButtons[1].classList.contains('is-selected'), true);
     });
 
     it('should keep the selected target after restart', () => {
@@ -416,17 +408,17 @@ describe('Phase 3 control area', () => {
         const shell = doc.body.children[0];
         registerAppTree(doc, shell);
 
-        doc.getElementById('target-fiveLettersTest').click();
-        const expected = getPracticeTargetById('fiveLettersTest').text;
+        doc.getElementById('target-symbolsTwice').click();
+        const expected = getPracticeTargetById('symbolsTwice').text;
 
         expected.split('').forEach((character, index) => {
             handleTypingInput(doc, character, () => 1000 + index * 100);
         });
 
         const stored = JSON.parse(localStorage.getItem(getHighScoreStorageKey()));
-        assertEqual(stored.fiveLettersTest, 400);
-        assertEqual(doc.getElementById('highScoreValue').textContent, '0.40s');
-        assertEqual(alerts[0], 'New high score: 0.40s');
+        assertEqual(stored.symbolsTwice, 5900);
+        assertEqual(doc.getElementById('highScoreValue').textContent, '5.90s');
+        assertEqual(alerts[0], 'New high score: 5.90s');
     });
 });
 
@@ -496,9 +488,9 @@ describe('Phase 4 core logic', () => {
         const doc = createMockDocument();
         renderApp(doc);
         registerAppTree(doc, doc.body.children[0]);
-        doc.getElementById('target-fiveLettersTest').click();
-
-        'abcde'.split('').forEach((character, index) => {
+        doc.getElementById('target-lowercaseTwice').click();
+        const expected = getPracticeTargetById('lowercaseTwice').text;
+        expected.split('').forEach((character, index) => {
             handleTypingInput(doc, character, () => 1000 + index * 100);
         });
 
