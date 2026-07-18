@@ -277,7 +277,8 @@ function createKeyboardLayout() {
     return [
         ['q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p'],
         ['a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l'],
-        ['z', 'x', 'c', 'v', 'b', 'n', 'm']
+        ['z', 'x', 'c', 'v', 'b', 'n', 'm'],
+        ['!', '@', '.', '-']
     ];
 }
 
@@ -285,6 +286,8 @@ function createKeyboardKey(doc, keyLabel) {
     const key = doc.createElement('div');
     key.className = 'keyboard-key';
     key.textContent = keyLabel;
+    key.setAttribute('data-key', keyLabel);
+    key.setAttribute('aria-label', `Key ${keyLabel}`);
     return key;
 }
 
@@ -307,6 +310,27 @@ function createKeyboardRow(doc, keys) {
     });
 
     return row;
+}
+
+function getNextExpectedCharacter(target, input) {
+    return input.length < target.text.length ? target.text[input.length] : null;
+}
+
+function updateKeyboardHighlight(doc, target = getSelectedPracticeTarget(), input = '') {
+    const keyboardBody = doc.getElementById('keyboardBody');
+    if (!keyboardBody || !keyboardBody.children[0]) {
+        return false;
+    }
+
+    const nextCharacter = getNextExpectedCharacter(target, input);
+    const keyboard = keyboardBody.children[0];
+    Array.from(keyboard.children).forEach((row) => {
+        Array.from(row.children).forEach((key) => {
+            const isCurrent = key.getAttribute('data-key') === nextCharacter;
+            key.classList.toggle('is-current', isCurrent);
+        });
+    });
+    return true;
 }
 
 function createTopSection(doc) {
@@ -409,6 +433,7 @@ function createKeyboardSection(doc) {
     body.appendChild(keyboard);
     section.appendChild(title);
     section.appendChild(body);
+    updateKeyboardHighlight(doc, getSelectedPracticeTarget(), getSessionState(doc).input);
     return section;
 }
 
@@ -460,6 +485,7 @@ function renderPracticeTarget(doc, targetId) {
     }
 
     updatePracticeTargetButtons(doc, target.id);
+    updateKeyboardHighlight(doc, target, '');
     updateTimerDisplay(doc);
     updateHighScoreDisplay(doc, target.id);
 }
@@ -473,6 +499,7 @@ function renderCurrentPracticeText(doc) {
     }
 
     mainArea.replaceChildren(createPracticeText(doc, getSelectedPracticeTarget(), session.input));
+    updateKeyboardHighlight(doc, getSelectedPracticeTarget(), session.input);
     return true;
 }
 
@@ -749,6 +776,7 @@ function renderApp(doc = document) {
         doc.registerTree(root.children[0]);
     }
     setKeyboardVisibility(doc, true);
+    updateKeyboardHighlight(doc);
     bindKeyboardToggle(doc);
     bindHighScoreButton(doc);
     bindPracticeTargetButtons(doc);
@@ -792,6 +820,7 @@ if (typeof module !== 'undefined' && module.exports) {
         getHighScoreStorageKey,
         getHighScoreForTarget,
         getTypedCharacterState,
+        updateKeyboardHighlight,
         updateTimerDisplay,
         updateHighScoreDisplay,
         renderCurrentPracticeText,

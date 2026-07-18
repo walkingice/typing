@@ -14,6 +14,7 @@ const {
     resetSessionState,
     formatElapsedTime,
     getTypedCharacterState,
+    updateKeyboardHighlight,
     createMainSection,
     createKeyboardSection,
     createAppShell,
@@ -95,6 +96,9 @@ function createMockElement(tagName) {
         },
         setAttribute(name, value) {
             this.attributes[name] = String(value);
+        },
+        getAttribute(name) {
+            return this.attributes[name] || null;
         },
         addEventListener(type, handler) {
             this.listeners[type] = handler;
@@ -255,9 +259,10 @@ describe('Phase 2 keyboard area', () => {
     it('should create the keyboard layout rows', () => {
         const layout = createKeyboardLayout();
 
-        assertEqual(layout.length, 3);
+        assertEqual(layout.length, 4);
         assertEqual(layout[0][0], 'q');
         assertEqual(layout[2][6], 'm');
+        assertEqual(layout[3].join(''), '!@.-');
     });
 
     it('should render the keyboard area content', () => {
@@ -269,7 +274,8 @@ describe('Phase 2 keyboard area', () => {
         assertEqual(keyboard.children[0].textContent, 'Keyboard area');
         assertEqual(keyboard.children[1].id, 'keyboardBody');
         assertEqual(keyboard.children[1].children.length, 1);
-        assertEqual(keyboard.children[1].children[0].children.length, 3);
+        assertEqual(keyboard.children[1].children[0].children.length, 4);
+        assertEqual(keyboard.children[1].children[0].children[0].children[0].attributes['data-key'], 'q');
     });
 
     it('should toggle keyboard visibility state', () => {
@@ -401,6 +407,53 @@ describe('Phase 3 control area', () => {
 });
 
 describe('Phase 4 core logic', () => {
+    it('should highlight the next expected keyboard key', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+
+        const keyboard = doc.getElementById('keyboardBody').children[0];
+        const firstKey = keyboard.children[1].children[0];
+        assertEqual(firstKey.classList.contains('is-current'), true);
+
+        handleTypingInput(doc, 'a', () => 1000);
+        const secondKey = keyboard.children[2].children[4];
+        assertEqual(firstKey.classList.contains('is-current'), false);
+        assertEqual(secondKey.classList.contains('is-current'), true);
+    });
+
+    it('should restore the keyboard hint after Backspace and support symbols', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+
+        handleTypingInput(doc, 'a', () => 1000);
+        handleTypingInput(doc, 'Backspace', () => 1100);
+
+        const keyboard = doc.getElementById('keyboardBody').children[0];
+        assertEqual(keyboard.children[1].children[0].classList.contains('is-current'), true);
+
+        doc.getElementById('target-symbolsTwice').click();
+        updateKeyboardHighlight(doc, getPracticeTargetById('symbolsTwice'), 'abcdefghijklmnopqrstuvwxyz');
+        assertEqual(keyboard.children[3].children[0].classList.contains('is-current'), true);
+    });
+
+    it('should clear the keyboard hint after completing the target', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+        doc.getElementById('target-fiveLettersTest').click();
+
+        'abcde'.split('').forEach((character, index) => {
+            handleTypingInput(doc, character, () => 1000 + index * 100);
+        });
+
+        const keys = doc.getElementById('keyboardBody').children[0].children;
+        keys.forEach((row) => row.children.forEach((key) => {
+            assertEqual(key.classList.contains('is-current'), false);
+        }));
+    });
+
     it('should create and reset session state', () => {
         const session = createSessionState('lowercaseTwice');
         assertEqual(session.targetId, 'lowercaseTwice');
