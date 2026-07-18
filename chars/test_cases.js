@@ -8,6 +8,11 @@ const {
     getPracticeTargetById,
     getSelectedPracticeTarget,
     createKeyboardLayout,
+    createSessionState,
+    getSessionState,
+    resetSessionState,
+    formatElapsedTime,
+    getTypedCharacterState,
     createMainSection,
     createKeyboardSection,
     createAppShell,
@@ -15,15 +20,25 @@ const {
     setKeyboardVisibility,
     renderPracticeTarget,
     toggleKeyboardVisibility,
+    updateTimerDisplay,
+    handleTypingInput,
     renderApp
 } = require('./main.js');
 
 function createMockElement(tagName) {
     const classSet = new Set();
+    let classNameValue = '';
     const element = {
         tagName: tagName.toUpperCase(),
         _id: '',
-        className: '',
+        get className() {
+            return classNameValue;
+        },
+        set className(value) {
+            classNameValue = String(value);
+            classSet.clear();
+            classNameValue.split(/\s+/).filter(Boolean).forEach((name) => classSet.add(name));
+        },
         textContent: '',
         type: '',
         attributes: {},
@@ -62,7 +77,7 @@ function createMockElement(tagName) {
                 return true;
             },
             sync() {
-                this.owner.className = Array.from(classSet).join(' ');
+                classNameValue = Array.from(classSet).join(' ');
             },
             owner: null
         },
@@ -114,11 +129,15 @@ function createMockDocument() {
 
     return {
         body: root,
+        listeners: {},
         createElement(tagName) {
             return createMockElement(tagName);
         },
         getElementById(id) {
             return elements[id] || null;
+        },
+        addEventListener(type, handler) {
+            this.listeners[type] = handler;
         },
         registerElement(element) {
             elements[element.id] = element;
@@ -140,11 +159,11 @@ function registerAppTree(doc, node) {
 }
 
 function getKeyboardToggleButton(shell) {
-    return shell.children[0].children[1].children[1].children[0];
+    return shell.children[0].children[2].children[1].children[0];
 }
 
 function getPracticeTargetButtons(shell) {
-    return shell.children[0].children[1].children[0].children;
+    return shell.children[0].children[2].children[0].children;
 }
 
 describe('Basic Infrastructure', () => {
@@ -199,7 +218,8 @@ describe('Phase 1 UI shell', () => {
         assertEqual(main.id, 'mainArea');
         assertEqual(main.children.length, 1);
         assertEqual(main.children[0].children[0].textContent, 'a-z x2');
-        assertEqual(main.children[0].children[2].textContent, buildRepeatedAlphabet(2));
+        assertEqual(main.children[0].children[2].children.length, buildRepeatedAlphabet(2).length);
+        assertEqual(main.children[0].children[2].children[0].textContent, 'a');
     });
 
     it('should render the app shell into the root element', () => {
@@ -209,6 +229,11 @@ describe('Phase 1 UI shell', () => {
         assertEqual(doc.body.children.length, 1);
         assertEqual(doc.body.children[0].id, 'appShell');
         assertEqual(doc.body.children[0].children[0].id, 'topArea');
+    });
+
+    it('should format elapsed time to two decimal places', () => {
+        assertEqual(formatElapsedTime(0), '0.00s');
+        assertEqual(formatElapsedTime(64420), '64.42s');
     });
 });
 
@@ -281,7 +306,7 @@ describe('Phase 3 control area', () => {
 
         targetButtons[1].click();
 
-        assertEqual(mainArea.children[0].children[0].textContent, 'a-z + symbols x2');
+        assertEqual(doc.getElementById('mainArea').children[0].children[0].textContent, 'a-z + symbols x2');
         assertEqual(targetButtons[0].attributes['aria-pressed'], 'false');
         assertEqual(targetButtons[1].attributes['aria-pressed'], 'true');
     });
@@ -309,6 +334,79 @@ describe('Phase 3 control area', () => {
         doc.getElementById('clearRecordsButton').click();
 
         assertEqual(localStorage.getItem('typingPracticeHighScores'), null);
+    });
+});
+
+describe('Phase 4 core logic', () => {
+    it('should create and reset session state', () => {
+        const session = createSessionState('lowercaseTwice');
+        assertEqual(session.targetId, 'lowercaseTwice');
+        assertEqual(session.input, '');
+        assertEqual(session.startedAt, null);
+
+        const doc = createMockDocument();
+        const reset = resetSessionState(doc, 'symbolsTwice');
+        assertEqual(getSessionState(doc).targetId, 'symbolsTwice');
+        assertEqual(reset.input, '');
+    });
+
+    it('should map typed characters to correct and incorrect states', () => {
+        assertEqual(getTypedCharacterState('abc', '' ).join(','), 'pending,pending,pending');
+        assertEqual(getTypedCharacterState('abc', 'ab').join(','), 'correct,correct,pending');
+        assertEqual(getTypedCharacterState('abc', 'ax').join(','), 'correct,incorrect,pending');
+    });
+
+    it('should start timing on first printable input and update rendering', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+
+        handleTypingInput(doc, 'a', () => 1000);
+        assertEqual(getSessionState(doc).startedAt, 1000);
+        assertEqual(doc.getElementById('stopwatchValue').textContent, '0.00s');
+
+        updateTimerDisplay(doc, () => 2650);
+        assertEqual(doc.getElementById('stopwatchValue').textContent, '1.65s');
+    });
+
+    it('should mark typed characters as correct and incorrect', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+
+        handleTypingInput(doc, 'a', () => 1000);
+        handleTypingInput(doc, 'b', () => 1200);
+
+        const mainText = doc.getElementById('mainArea').children[0].children[2];
+        assertEqual(mainText.children[0].classList.contains('is-correct'), true);
+        assertEqual(mainText.children[1].classList.contains('is-correct'), true);
+        assertEqual(mainText.children[2].classList.contains('is-current'), true);
+
+        handleTypingInput(doc, 'x', () => 1400);
+        assertEqual(doc.getElementById('mainArea').children[0].children[2].children[2].classList.contains('is-incorrect'), true);
+    });
+
+    it('should support Backspace and complete the session on exact match', () => {
+        const doc = createMockDocument();
+        renderApp(doc);
+        registerAppTree(doc, doc.body.children[0]);
+
+        handleTypingInput(doc, 'a', () => 1000);
+        handleTypingInput(doc, 'b', () => 1100);
+        handleTypingInput(doc, 'Backspace', () => 1200);
+
+        assertEqual(getSessionState(doc).input, 'a');
+        assertEqual(doc.getElementById('mainArea').children[0].children[2].children[1].classList.contains('is-current'), true);
+
+        const session = resetSessionState(doc, 'lowercaseTwice');
+        const expected = getPracticeTargetById(session.targetId).text;
+        expected.split('').forEach((character, index) => {
+            handleTypingInput(doc, character, () => 1000 + index * 100);
+        });
+
+        assertEqual(getSessionState(doc).isCompleted, true);
+        assertEqual(getSessionState(doc).finishedAt !== null, true);
+        assertEqual(getSessionState(doc).input, expected);
     });
 });
 

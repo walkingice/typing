@@ -22,6 +22,7 @@ const PRACTICE_TARGETS = [
 ];
 
 let selectedTargetId = PRACTICE_TARGETS[0].id;
+const sessionStateByDocument = new WeakMap();
 
 function getAppName() {
     return 'Typing Practice';
@@ -33,6 +34,34 @@ function createControlButtons() {
         { id: 'clearRecordsButton', label: 'Clear Records' },
         { id: 'restartButton', label: 'Restart' }
     ];
+}
+
+function createSessionState(targetId = selectedTargetId) {
+    return {
+        targetId,
+        input: '',
+        startedAt: null,
+        finishedAt: null,
+        isCompleted: false,
+        lastElapsedMs: 0
+    };
+}
+
+function getSessionState(doc) {
+    if (!sessionStateByDocument.has(doc)) {
+        sessionStateByDocument.set(doc, createSessionState());
+    }
+
+    return sessionStateByDocument.get(doc);
+}
+
+function setSessionState(doc, nextState) {
+    sessionStateByDocument.set(doc, nextState);
+    return nextState;
+}
+
+function resetSessionState(doc, targetId = selectedTargetId) {
+    return setSessionState(doc, createSessionState(targetId));
 }
 
 function buildRepeatedAlphabet(repeatCount) {
@@ -55,6 +84,73 @@ function buildSegmentedAlphabet() {
     }
 
     return segments.join('');
+}
+
+function formatElapsedTime(ms) {
+    return `${(ms / 1000).toFixed(2)}s`;
+}
+
+function getPracticeText(targetId = selectedTargetId) {
+    return getPracticeTargetById(targetId).text;
+}
+
+function getTypedCharacterState(expectedText, typedText) {
+    const state = [];
+    const length = Math.max(expectedText.length, typedText.length);
+
+    for (let index = 0; index < length; index += 1) {
+        const expected = expectedText[index];
+        const actual = typedText[index];
+
+        if (actual === undefined) {
+            state.push('pending');
+        } else if (actual === expected) {
+            state.push('correct');
+        } else {
+            state.push('incorrect');
+        }
+    }
+
+    return state;
+}
+
+function isPrintableKey(key) {
+    return typeof key === 'string' && key.length === 1;
+}
+
+function updateTimerDisplay(doc, nowFn = () => Date.now()) {
+    const stopwatch = doc.getElementById('stopwatchValue');
+    const session = getSessionState(doc);
+
+    if (!stopwatch) {
+        return null;
+    }
+
+    const elapsedMs = session.startedAt === null
+        ? 0
+        : (session.finishedAt ?? nowFn()) - session.startedAt;
+
+    session.lastElapsedMs = elapsedMs;
+    stopwatch.textContent = formatElapsedTime(elapsedMs);
+    return elapsedMs;
+}
+
+function createStatusLabel(doc, label, value, id) {
+    const wrapper = doc.createElement('div');
+    wrapper.className = 'status-item';
+
+    const title = doc.createElement('span');
+    title.className = 'status-label';
+    title.textContent = label;
+
+    const content = doc.createElement('span');
+    content.className = 'status-value';
+    content.id = id;
+    content.textContent = value;
+
+    wrapper.appendChild(title);
+    wrapper.appendChild(content);
+    return wrapper;
 }
 
 function getPracticeTargetById(targetId) {
@@ -131,6 +227,11 @@ function createTopSection(doc) {
     const title = doc.createElement('h1');
     title.textContent = getAppName();
 
+    const statusRow = doc.createElement('div');
+    statusRow.className = 'status-row';
+    statusRow.appendChild(createStatusLabel(doc, 'Stopwatch', '0.00s', 'stopwatchValue'));
+    statusRow.appendChild(createStatusLabel(doc, 'High Score', '--', 'highScoreValue'));
+
     const targetRow = doc.createElement('div');
     targetRow.className = 'control-row';
 
@@ -152,11 +253,12 @@ function createTopSection(doc) {
     actionRow.appendChild(controls);
 
     section.appendChild(title);
+    section.appendChild(statusRow);
     section.appendChild(actionRow);
     return section;
 }
 
-function createPracticeText(doc, target) {
+function createPracticeText(doc, target, typedText = '') {
     const container = doc.createElement('div');
     container.className = 'practice-text';
 
@@ -170,7 +272,23 @@ function createPracticeText(doc, target) {
 
     const text = doc.createElement('p');
     text.className = 'practice-target-text';
-    text.textContent = target.text;
+
+    const characterState = getTypedCharacterState(target.text, typedText);
+    target.text.split('').forEach((character, index) => {
+        const span = doc.createElement('span');
+        span.textContent = character;
+        span.className = 'practice-char';
+
+        if (characterState[index] === 'correct') {
+            span.classList.add('is-correct');
+        } else if (characterState[index] === 'incorrect') {
+            span.classList.add('is-incorrect');
+        } else if (index === typedText.length && typedText.length < target.text.length) {
+            span.classList.add('is-current');
+        }
+
+        text.appendChild(span);
+    });
 
     container.appendChild(heading);
     container.appendChild(description);
@@ -180,7 +298,8 @@ function createPracticeText(doc, target) {
 
 function createMainSection(doc) {
     const section = createSection(doc, 'panel panel-main', 'mainArea');
-    section.appendChild(createPracticeText(doc, getSelectedPracticeTarget()));
+    const session = getSessionState(doc);
+    section.appendChild(createPracticeText(doc, getSelectedPracticeTarget(), session.input));
     return section;
 }
 
@@ -241,6 +360,7 @@ function updatePracticeTargetButtons(doc, targetId) {
 function renderPracticeTarget(doc, targetId) {
     const target = getPracticeTargetById(targetId);
     selectedTargetId = target.id;
+    resetSessionState(doc, target.id);
 
     const mainArea = doc.getElementById('mainArea');
     if (mainArea) {
@@ -248,6 +368,93 @@ function renderPracticeTarget(doc, targetId) {
     }
 
     updatePracticeTargetButtons(doc, target.id);
+    updateTimerDisplay(doc);
+}
+
+function renderCurrentPracticeText(doc) {
+    const mainArea = doc.getElementById('mainArea');
+    const session = getSessionState(doc);
+
+    if (!mainArea) {
+        return false;
+    }
+
+    mainArea.replaceChildren(createPracticeText(doc, getSelectedPracticeTarget(), session.input));
+    return true;
+}
+
+function finalizeSession(doc, nowFn = () => Date.now()) {
+    const session = getSessionState(doc);
+    if (session.finishedAt !== null) {
+        return session;
+    }
+
+    session.finishedAt = nowFn();
+    session.isCompleted = true;
+    updateTimerDisplay(doc, nowFn);
+    return session;
+}
+
+function flashErrorBackground(doc) {
+    const body = doc.body || doc.documentElement;
+    if (!body || !body.classList) {
+        return false;
+    }
+
+    body.classList.add('is-error-flash');
+    if (typeof setTimeout === 'function') {
+        setTimeout(() => body.classList.remove('is-error-flash'), 120);
+    }
+    return true;
+}
+
+function handleTypingInput(doc, key, nowFn = () => Date.now()) {
+    const session = getSessionState(doc);
+    const expectedText = getPracticeText(session.targetId);
+
+    if (session.isCompleted) {
+        return session;
+    }
+
+    if (key === 'Backspace') {
+        session.input = session.input.slice(0, -1);
+        renderCurrentPracticeText(doc);
+        updateTimerDisplay(doc, nowFn);
+        return session;
+    }
+
+    if (!isPrintableKey(key)) {
+        return session;
+    }
+
+    if (session.startedAt === null) {
+        session.startedAt = nowFn();
+    }
+
+    session.input += key;
+    renderCurrentPracticeText(doc);
+    updateTimerDisplay(doc, nowFn);
+
+    if (!expectedText.startsWith(session.input)) {
+        flashErrorBackground(doc);
+    }
+
+    if (session.input === expectedText) {
+        finalizeSession(doc, nowFn);
+    }
+
+    return session;
+}
+
+function bindTypingInput(doc) {
+    if (typeof doc.addEventListener !== 'function') {
+        return false;
+    }
+
+    doc.addEventListener('keydown', (event) => {
+        handleTypingInput(doc, event.key);
+    });
+    return true;
 }
 
 function createAppShell(doc = document) {
@@ -317,6 +524,7 @@ function renderApp(doc = document) {
         throw new Error('App root not found');
     }
 
+    resetSessionState(doc, selectedTargetId);
     root.replaceChildren(createAppShell(doc));
     if (typeof doc.registerTree === 'function' && root.children[0]) {
         doc.registerTree(root.children[0]);
@@ -326,6 +534,8 @@ function renderApp(doc = document) {
     bindPracticeTargetButtons(doc);
     bindClearRecordsButton(doc);
     bindRestartButton(doc);
+    bindTypingInput(doc);
+    updateTimerDisplay(doc);
 }
 
 function boot() {
@@ -354,6 +564,14 @@ if (typeof module !== 'undefined' && module.exports) {
         getPracticeTargetById,
         getSelectedPracticeTarget,
         createKeyboardLayout,
+        createSessionState,
+        getSessionState,
+        resetSessionState,
+        formatElapsedTime,
+        getTypedCharacterState,
+        updateTimerDisplay,
+        renderCurrentPracticeText,
+        handleTypingInput,
         createMainSection,
         createKeyboardSection,
         createAppShell,
