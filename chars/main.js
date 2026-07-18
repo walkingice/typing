@@ -790,16 +790,6 @@ function bindRestartButton(doc) {
 
     button.addEventListener('click', () => {
         renderPracticeTarget(doc, selectedTargetId);
-        button.textContent = '已重開';
-        button.classList.add('is-feedback');
-        if (button.feedbackTimer) {
-            clearTimeout(button.feedbackTimer);
-        }
-        button.feedbackTimer = setTimeout(() => {
-            button.textContent = '重開';
-            button.classList.remove('is-feedback');
-            button.feedbackTimer = null;
-        }, 900);
     });
 }
 

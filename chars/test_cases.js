@@ -368,8 +368,7 @@ describe('Phase 3 control area', () => {
         restartButton.click();
 
         assertEqual(doc.getElementById('mainArea').children[0].children[0].className, 'practice-target-text');
-        assertEqual(restartButton.textContent, '已重開');
-        assertEqual(restartButton.classList.contains('is-feedback'), true);
+        assertEqual(restartButton.textContent, '重開');
     });
 
     it('should clear stored high scores after confirmation', () => {
